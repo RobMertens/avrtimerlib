@@ -1,0 +1,69 @@
+#######################################
+# Syntax Coloring Map For PID Library
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+PID					KEYWORD1
+ESC					KEYWORD1
+MPU6050				KEYWORD1
+RX					KEYWORD1
+BAT					KEYWORD1
+LED					KEYWORD1
+TIMER				KEYWORD1
+INTERRUPT			KEYWORD1
+MATH				KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+setOutputLimits		KEYWORD2
+setGainValues		KEYWORD2
+setDirection		KEYWORD2
+calculate			KEYWORD2
+getMinOutputLimit	KEYWORD2
+getMaxOutputLimit	KEYWORD2
+getProportionalGain	KEYWORD2
+getIntegralGain		KEYWORD2
+getDifferentialGain	KEYWORD2
+GetDirection		KEYWORD2
+
+activate			KEYWORD2
+writeByte			KEYWORD2
+writeWord			KEYWORD2
+setScale			KEYWORD2
+getAddress			KEYWORD2
+readByte			KEYWORD2
+readWord			KEYWORD2
+readGyroscope		KEYWORD2
+readAccelero		KEYWORD2
+
+writePulse			KEYWORD2
+
+begin				KEYWORD2
+end					KEYWORD2
+timeOut				KEYWORD2
+setSpeed			KEYWORD2
+pullup				KEYWORD2
+scan				KEYWORD2
+write				KEYWORD2
+read				KEYWORD2
+available			KEYWORD2
+receive				KEYWORD2
+
+#######################################
+# Objects and instances (KEYWORD3)
+#######################################
+
+vector				KEYWORD3
+quaternion			KEYWORD3
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+DIRECT				LITERAL1
+REVERSE				LITERAL1

@@ -1,0 +1,9 @@
+{
+  "name": "avr-timer-lib",
+  "keywords": "avr, timer, lib, interrupt",
+  "description": "This library provides classes for avr timers.",
+  "url": "",
+  "include": "timer8, timer16, interrupt",
+  "authors": [{ "name": "Rob Mertens" }],
+  "frameworks": "arduino"
+}
