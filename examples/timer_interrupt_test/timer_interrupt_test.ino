@@ -10,7 +10,7 @@ void setup()
 	Serial.begin(9600);
 	
 	t2.setMode(t_mode::NORMAL);
-	t2.setInterruptMode(t_interrupt::NONE);
+	t2.setInterruptMode(t_interrupt::OVF);
 	t2.setPrescaler(64);
 	t2.reset();
 }
@@ -18,7 +18,7 @@ void setup()
 // MAIN PROGRAM
 void loop()
 {
-	Serial.println(t2.getCount());
+	Serial.println(t2.getOverflowCount());
 }
 
 
