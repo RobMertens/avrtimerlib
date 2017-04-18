@@ -52,55 +52,158 @@ timer8::timer8(uint8_t alias, volatile uint8_t * tccrxa, volatile uint8_t * tccr
  ******************************************************************************/
 void timer8::setAlias(uint8_t alias)
 {
-	_alias = alias;
+	_alias	= alias;
 }
 
 /*******************************************************************************
- * Method for setting the timer mode (NORMAL/CTC/PWM::FAST/PWM::PHASECORRECT).
+ * Method for setting the timer mode 2 NORMAL or CTC. This method cannot set
+ * mode 2 PWM.
  *
- * @param: mode The timer operation mode.
+ * @param: mode The timer operation mode, only NORMAL or CTC.
+ * @param: interrupt The interrupt mode, default is NONE.
+ * @param: compare TODO
  ******************************************************************************/
-void timer8::setMode(t_mode mode)
+int8_t timer8::setMode(t_mode mode, t_interrupt interrupt, uint8_t compare)
 {
-	_mode = mode;
+	int8_t ret = 0;
+	
+	_mode = t_mode::NONE;
+	_interrupt = t_interrupt::NONE;
 	
 	//MODES.
-	switch(_mode)
+	switch(mode)
 	{
 		case t_mode::NORMAL :
-			*_tccrxa &= ~(1 << 0);					// WGMx0 = 0;
-			*_tccrxa &= ~(1 << 1);					// WGMx1 = 0;
-			*_tccrxb &= ~(1 << 3); 					// WGMx2 = 0;
+			setMode2Normal();
 			break;
 	
 		case t_mode::CTC :
-			*_tccrxa &= ~(1 << 0);					// WGMx0 = 0;
-			*_tccrxa |=  (1 << 1);					// WGMx1 = 1;
-			*_tccrxb &= ~(1 << 3); 					// WGMx2 = 0;
+			setMode2Ctc();
 			break;
-	
+		
 		case t_mode::PWM :
-			//PWM TYPES.
-			/**
-			switch(PWM)
-			case FAST :
-				*_tccrxa |=  (1 << 0);				// WGMx0 = 1;
-				*_tccrxa |=  (1 << 1);				// WGMx1 = 1;
-				*_tccrxb |=  (1 << 3); 				// WGMx2 = 1;
+		case t_mode::NONE :
+		default :
+			//TODO::reset timer.
+			ret = -1;
+			return ret;
+	}
+	
+	//TODO::INTERRUPTS.
+	ret = setInterruptMode(interrupt, compare);
+	
+	//RETURN.
+	if(!ret)
+	{
+		_mode = mode;
+		_interrupt = interrupt;
+	}
+	else
+	{
+		hardReset();
+	}
+	
+	return ret;
+}
+
+/*******************************************************************************
+ * Method for setting the timer mode 2 PWM. This method cannot set mode 2 NORMAL
+ * or CTC.
+ *
+ * @param: mode The timer operation mode, only PWM.
+ * @param: interrupt The interrupt mode, default is NONE.
+ * @param: inverted TODO
+ ******************************************************************************/
+int8_t timer8::setMode(t_mode mode, t_pwm pwm)
+{
+	int8_t ret = 0;
+	
+	_mode = t_mode::NONE;
+	_pwm = t_pwm::NONE;
+	
+	//MODES.
+	if(mode==t_mode::PWM)
+	{
+		switch(pwm)
+		{
+			case t_pwm::FAST :
+				setMode2Ctc();
 				break;
 		
-			case PHASECORRECT :
-				*_tccrxa |= ~(1 << 0);				// WGMx0 = 1;
-				*_tccrxa &=  (1 << 1);				// WGMx1 = 0;
-				*_tccrxb |= ~(1 << 3); 				// WGMx2 = 1;
+			case t_pwm::PC :
+				ret = -1;
 				break;
-			*/
-			break;
+			
+			case t_pwm::NONE :
+			default :
+				//TODO::reset timer.
+				ret = -1;
+				break;
+		}
+	}
+	else
+	{
+		ret = -1;
+	}
 	
-		default : 
-			//error
-			break;
-	}	
+	//TODO::INVERTED MODE.
+	
+	//RETURN.
+	if(!ret)
+	{
+		_mode = mode;
+		_interrupt = interrupt;
+	}
+	else
+	{
+		hardReset();
+	}
+	
+	return ret;
+}
+
+void timer8::setMode2Normal()
+{
+	//Normal mode.
+	*_tccrxa &= ~(1 << 0);					// WGMx0 = 0;
+	*_tccrxa &= ~(1 << 1);					// WGMx1 = 0;
+	*_tccrxb &= ~(1 << 3); 					// WGMx2 = 0;
+	
+	//TODO::OCRxA
+	//TODO::normal + interrupt mode.
+}
+
+void timer8::setMode2Ctc()
+{
+	//CTC Mode.
+	*_tccrxa &= ~(1 << 0);					// WGMx0 = 0;
+	*_tccrxa |=  (1 << 1);					// WGMx1 = 1;
+	*_tccrxb &= ~(1 << 3); 					// WGMx2 = 0;
+	
+	//TODO::OCRxA
+	//TODO::interrupt mode.
+}
+
+void timer8::setMode2FastPwm()
+{
+	//Fast PWM.
+	*_tccrxa |=  (1 << 0);				// WGMx0 = 1;
+	*_tccrxa |=  (1 << 1);				// WGMx1 = 1;
+	*_tccrxb |=  (1 << 3); 				// WGMx2 = 1;
+	
+	//TODO::OCRxA
+	//TODO::inverted (y/n)
+}
+
+void timer8::setMode2PhaseCorrectPwm()
+{
+	//Phase Correct PWM.
+	*_tccrxa |= ~(1 << 0);				// WGMx0 = 1;
+	*_tccrxa &=  (1 << 1);				// WGMx1 = 0;
+	*_tccrxb |= ~(1 << 3); 				// WGMx2 = 1;
+	
+	//TODO::OCRxA
+	//TODO::inverted (y/n)
 }
 
 /*******************************************************************************
@@ -108,11 +211,13 @@ void timer8::setMode(t_mode mode)
  *
  * @param: interrupt The timer interrupt mode.
  ******************************************************************************/
-void timer8::setInterruptMode(t_interrupt interrupt, uint8_t comp)
+int8_t timer8::setInterruptMode(t_interrupt interrupt, uint8_t compareValue)
 {
+	int8_t ret = 0;
+	
 	_interrupt = interrupt;
 	
-	//MODES.
+	//INTERRUPT MODE.
 	switch(_interrupt)
 	{
 		case t_interrupt::NONE : 
@@ -133,9 +238,11 @@ void timer8::setInterruptMode(t_interrupt interrupt, uint8_t comp)
 			*_ocrxb  = comp;
 			break;
 		default :
-			//error
+			ret = -1;
 			break;
 	}
+	
+	return ret;
 }
 
 /*******************************************************************************

@@ -1,21 +1,37 @@
 #ifndef _SETTINGS_H_
 #define _SETTINGS_H_
 
-enum class t_mode : short
+/*******************************************************************************
+ * Timer modes.
+ ******************************************************************************/
+enum class t_mode : uint8_t
 {
-	NORMAL = 0,
-	CTC    = 1,
-	PWM    = 2
+	NONE	= 0,
+	NORMAL	= 1,
+	CTC	= 2
 };
 
-enum class t_interrupt : short
+/*******************************************************************************
+ * Interrupts only in NORMAL or CTC.
+ ******************************************************************************/
+enum class t_interrupt : uint8_t
 {
-	NONE  = 0,
-	OVF   = 1,
-	COMPA = 2, // T2
-	COMPB = 3 // T2
-	//COMPC = 5;
-	//CAPT  = 6;
+	NONE	= 0,
+	OVF	= 1,
+	COMPA	= 2,
+	COMPB	= 3
+	//COMPC = 4;
+	//CAPT  = 5;
+};
+
+/*******************************************************************************
+ * Types only in PWM.
+ ******************************************************************************/
+enum class t_pwm : uint8_t
+{
+	NONE	= 0,
+	FAST	= 1,
+	PC	= 2
 };
 
 #endif
