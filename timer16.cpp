@@ -1,25 +1,25 @@
 /******************************************************************************
  * avr-timer-lib
- * TIMER8.CPP
+ * TIMER16.CPP
  *  
- * This file contains functions for 8bit avr-timers.
+ * This file contains functions for 16bit avr-timers.
  *
  * TODO::auto pin-map w/ alias function for different arduino's (UNO/MEGA/...).
  *
  * @author:	Rob Mertens
  * @version: 	1.0.1 
- * @date: 	17/04/2017
+ * @date: 	20/04/2017
  ******************************************************************************/
 
-#include <timer8.h>
+#include <timer16.h>
 
 /*******************************************************************************
  * Global forward declaration.
  * 
- * TODO::this static instance is used for all timer8 instances, does this work?
+ * TODO::this static instance is used for all timer16 instances, does this work?
  *	 for each timer instance a new static instance and reference to ISR.
  ******************************************************************************/
-static timer8 *_t;
+static timer16 *_t;
 
 /*******************************************************************************
  * Constructor for a 8-bit timer, e.g.: timer0 on MEGA2560.
@@ -29,7 +29,7 @@ static timer8 *_t;
  * @param: tccr The timer control register.
  * @param: tcnt The timer count register.
  ******************************************************************************/
-timer8::timer8(uint8_t alias, volatile uint8_t * tccrxa, volatile uint8_t * tccrxb, volatile uint8_t * tcntx, volatile uint8_t * timskx, volatile uint8_t * ocrxa, volatile uint8_t * ocrxb)
+timer16::timer16(uint8_t alias, volatile uint8_t * tccrxa, volatile uint8_t * tccrxb, volatile uint8_t * tcntx, volatile uint8_t * timskx, volatile uint16_t * ocrxa, volatile uint16_t * ocrxb)
 {
 	_alias  = alias;						// TIMER0 or TIMER2.
 	_tccrxa = tccrxa;						// Timer Count Control Register.
@@ -53,7 +53,7 @@ timer8::timer8(uint8_t alias, volatile uint8_t * tccrxa, volatile uint8_t * tccr
  *
  * @param: timer The timer alias.
  ******************************************************************************/
-void timer8::setAlias(uint8_t alias)
+void timer16::setAlias(uint8_t alias)
 {
 	_alias	= alias;
 }
@@ -66,7 +66,7 @@ void timer8::setAlias(uint8_t alias)
  * @param: interrupt The interrupt mode, default is NONE.
  * @param: compare TODO
  ******************************************************************************/
-int8_t timer8::initialize(t_mode mode, t_interrupt interrupt, uint8_t compare)
+int8_t timer16::initialize(t_mode mode, t_interrupt interrupt, uint16_t compare)
 {
 	int8_t ret = 0;
 	
@@ -91,7 +91,7 @@ int8_t timer8::initialize(t_mode mode, t_interrupt interrupt, uint8_t compare)
  * @param: interrupt The interrupt mode, default is NONE.
  * @param: inverted TODO
  ******************************************************************************/
-int8_t timer8::initialize(t_mode mode, t_channel channel, bool inverted)
+int8_t timer16::initialize(t_mode mode, t_channel channel, bool inverted)
 {
 	int8_t ret = 0;
 	
@@ -113,7 +113,7 @@ int8_t timer8::initialize(t_mode mode, t_channel channel, bool inverted)
  *
  * @param: mode The timer operation mode.
  ******************************************************************************/
-int8_t timer8::setMode(t_mode mode)
+int8_t timer16::setMode(t_mode mode)
 {
 	int8_t ret = 0;
 	
@@ -140,11 +140,14 @@ int8_t timer8::setMode(t_mode mode)
 			setMode2PhaseCorrectPwm();
 			break;
 		
+		case t_mode::PWM_PC :
+			setMode2FrequencyCorrectPwm();
+			break;
+		
 		case t_mode::NONE :
 			//Nothing.
 			break;
 		
-		case t_mode::PWM_FC :
 		default :
 			ret = -1;
 			return ret;
@@ -156,7 +159,7 @@ int8_t timer8::setMode(t_mode mode)
 /*******************************************************************************
  * Private method for setting the timer mode 2 NORMAL.
  ******************************************************************************/
-void timer8::setMode2Normal()
+void timer16::setMode2Normal()
 {
 	//Normal mode.
 	*_tccrxa &= 0x0C;					// WGMx0  = 0;
@@ -174,7 +177,7 @@ void timer8::setMode2Normal()
 /*******************************************************************************
  * Private method for setting the timer mode 2 CTC.
  ******************************************************************************/
-void timer8::setMode2Ctc()
+void timer16::setMode2Ctc()
 {
 	//CTC Mode.
 	*_tccrxa &= 0x0C;					// WGMx0  = 0;
@@ -194,7 +197,7 @@ void timer8::setMode2Ctc()
  *
  * @param: interrupt The timer interrupt mode.
  ******************************************************************************/
-int8_t timer8::setInterruptMode(t_interrupt interrupt)
+int8_t timer16::setInterruptMode(t_interrupt interrupt)
 {
 	int8_t ret = 0;
 	
@@ -221,6 +224,9 @@ int8_t timer8::setInterruptMode(t_interrupt interrupt)
 			break;
 		
 		case t_interrupt::COMPC :
+			//TODO::
+			break;
+		
 		default :
 			ret = -1;
 			return ret;
@@ -234,7 +240,7 @@ int8_t timer8::setInterruptMode(t_interrupt interrupt)
 /*******************************************************************************
  * Private method for setting the timer mode 2 fast PWM.
  ******************************************************************************/
-void timer8::setMode2FastPwm()
+void timer16::setMode2FastPwm()
 {
 	//Fast PWM.
 	*_tccrxa &= 0x0C;					// WGMx0  = 1;
@@ -253,7 +259,7 @@ void timer8::setMode2FastPwm()
 /*******************************************************************************
  * Private method for setting the timer mode 2 phase correct PWM.
  ******************************************************************************/
-void timer8::setMode2PhaseCorrectPwm()
+void timer16::setMode2PhaseCorrectPwm()
 {
 	//Phase Correct PWM.
 	*_tccrxa &= 0x0C;					// WGMx0  = 1;
@@ -270,11 +276,20 @@ void timer8::setMode2PhaseCorrectPwm()
 }
 
 /*******************************************************************************
+ * Private method for setting the timer mode 2 phase correct PWM.
+ ******************************************************************************/
+void timer16::setMode2PhaseCorrectPwm()
+{
+	//Frequency Correct PWM.
+	//TODO::
+}
+
+/*******************************************************************************
  * Method for setting the timer interrupt mode.
  *
  * @param: interrupt The timer interrupt mode.
  ******************************************************************************/
-int8_t timer8::setPwmChannel(t_channel channel, bool inverted)
+int8_t timer16::setPwmChannel(t_channel channel, bool inverted)
 {
 	int8_t ret = 0;
 	
@@ -297,16 +312,28 @@ int8_t timer8::setPwmChannel(t_channel channel, bool inverted)
 			if(!inverted)*_tccrxa |= 0x20;
 			else{*_tccrxa |= 0x30;}
 			break;
-	
+		
+		case t_channel::C :
+			//TODO::
+			break;
+		
 		case t_channel::AB :
 			if(!inverted)*_tccrxa |= 0xA0;
 			else{*_tccrxa |= 0xF0;}
 			break;
 		
-		case t_channel::B :
 		case t_channel::BC :
+			//TODO::
+			break;
+		
 		case t_channel::AC :
+			//TODO::
+			break;
+		
 		case t_channel::ABC :
+			//TODO::
+			break;
+		
 		default :
 			ret = -1;
 			return ret;
@@ -333,18 +360,12 @@ int8_t timer8::setPwmChannel(t_channel channel, bool inverted)
  * 
  * @param: prescale The prescaler value.   
  ******************************************************************************/
-int8_t timer8::setPrescaler(uint16_t prescale)
+int8_t timer16::setPrescaler(uint16_t prescale)
 {
 	int8_t ret = 0;
 	
 	_prescale = 0;
 	*_tccrxb &= 0xF8;
-	
-	if(_alias!=0 or _alias!=2)
-	{
-		ret = -1;
-		return ret;
-	}
 	
 	switch(prescale)
 	{
@@ -361,34 +382,27 @@ int8_t timer8::setPrescaler(uint16_t prescale)
 			*_tccrxb |= 0x02;
 			break;
 		
-		case 32 :
-			if(_alias==2)*_tccrxb |= 0x03;
-			else{ret=-1;return ret;}
+		case 64 :
+			*_tccrxb |= 0x03;
 			break;
 		
-		case 64 :
-			if(_alias==0)*_tccrxb |= 0x03;
-			else{*_tccrxb |= 0x04;}
-			break;
-			
 		case 256 :
-			if(_alias==0)*_tccrxb |= 0x04;
-			else{ret=-1;return ret;}
+			*_tccrxb |= 0x04;
+			break;
+		
+		case 1024 :
+			*_tccrxb |= 0x05;
 			break;
 	
-		case 1024 :
-			if(_alias==0)*_tccrxb |= 0x05;
-			else{ret=-1;return ret;}
-			break;
-		
 		default :
 			ret = -1;
-			return ret;
+			return ret;	
 	}
 	
 	_prescale = prescale;
 	
 	return ret;
+	
 }
 
 /*******************************************************************************
@@ -396,7 +410,7 @@ int8_t timer8::setPrescaler(uint16_t prescale)
  *
  * @param compare The compare value (unsigned byte).
  ******************************************************************************/
-void timer8::setCompareValueA(uint8_t compare)
+void timer16::setCompareValueA(uint16_t compare)
 {
 	*_ocrxa = compare;
 }
@@ -406,7 +420,7 @@ void timer8::setCompareValueA(uint8_t compare)
  *
  * @param compare The compare value (unsigned byte).
  ******************************************************************************/
-void timer8::setCompareValueB(uint8_t compare)
+void timer16::setCompareValueB(uint16_t compare)
 {
 	*_ocrxb = compare;
 }
@@ -414,17 +428,17 @@ void timer8::setCompareValueB(uint8_t compare)
 /*******************************************************************************
  * 
  ******************************************************************************/
-int8_t timer8::setDutyCycleA(double dutyCycle)
+int8_t timer16::setDutyCycleA(double dutyCycle)
 {
 	int8_t ret = 0;
-	uint8_t compare = 0;
+	uint16_t compare = 0;
 	
 	if(_mode==t_mode::PWM_F or _mode==t_mode::PWM_PC)
 	{
 		if(dutyCycle > 1.0)dutyCycle=1.0;
 		else if(dutyCycle < 0.0)dutyCycle=0.0;
 		
-		compare = uint8_t(dutyCycle*0xFF-1);
+		compare = uint8_t(dutyCycle*0xFFFF-1);
 		
 		setCompareValueA(compare);
 	}
@@ -439,17 +453,17 @@ int8_t timer8::setDutyCycleA(double dutyCycle)
 /*******************************************************************************
  * 
  ******************************************************************************/
-int8_t timer8::setDutyCycleB(double dutyCycle)
+int8_t timer16::setDutyCycleB(double dutyCycle)
 {
 	int8_t ret = 0;
-	uint8_t compare = 0;
+	uint16_t compare = 0;
 	
 	if(_mode==t_mode::PWM_F or _mode==t_mode::PWM_PC)
 	{
 		if(dutyCycle > 1.0)dutyCycle=1.0;
 		else if(dutyCycle < 0.0)dutyCycle=0.0;
 		
-		compare = uint8_t(dutyCycle*0xFF-1);
+		compare = uint8_t(dutyCycle*0xFFFF-1);
 		
 		setCompareValueB(compare);
 	}
@@ -464,7 +478,7 @@ int8_t timer8::setDutyCycleB(double dutyCycle)
 /*******************************************************************************
  * 
  ******************************************************************************/
-int8_t timer8::setDutyCycleAB(double dutyCycleA, double dutyCycleB)
+int8_t timer16::setDutyCycleAB(double dutyCycleA, double dutyCycleB)
 {
 	//TODO::
 	
@@ -474,7 +488,7 @@ int8_t timer8::setDutyCycleAB(double dutyCycleA, double dutyCycleB)
 /*******************************************************************************
  * 
  ******************************************************************************/
-void timer8::set(uint8_t value)
+void timer16::set(uint8_t value)
 {
 	*_tcntx = value;
 }
@@ -482,15 +496,15 @@ void timer8::set(uint8_t value)
 /*******************************************************************************
  * TODO::clear interrupt bits.
  ******************************************************************************/
-void timer8::reset()
+void timer16::reset()
 {
-	set(0x00);
+	set(0x0000);
 }
 
 /*******************************************************************************
  * TODO::clear interrupt bits.
  ******************************************************************************/
-void timer8::hardReset()
+void timer16::hardReset()
 {
 	setMode(t_mode::NORMAL);
 	setInterruptMode(t_interrupt::NONE);
@@ -501,7 +515,7 @@ void timer8::hardReset()
 /*******************************************************************************
  * 
  ******************************************************************************/
-uint8_t timer8::getCount()
+uint8_t timer16::getCount()
 {
 	return *_tcntx;
 }
@@ -514,7 +528,7 @@ uint8_t timer8::getCount()
  * 
  * @return: _nonResetCount The count value since last reset.
  ******************************************************************************/
-uint16_t timer8::getNonResetCount()
+uint16_t timer16::getNonResetCount()
 {
 	//TODO::calculations.
 	
@@ -524,7 +538,7 @@ uint16_t timer8::getNonResetCount()
 /*******************************************************************************
  * 
  ******************************************************************************/
-uint16_t timer8::getOverflowCount()
+uint16_t timer16::getOverflowCount()
 {
 	return _overflowCount;
 }
@@ -532,7 +546,7 @@ uint16_t timer8::getOverflowCount()
 /*******************************************************************************
  * 
  ******************************************************************************/
-t_interrupt timer8::getInterruptMode()
+t_interrupt timer16::getInterruptMode()
 {
 	return _interrupt;
 }
@@ -540,7 +554,7 @@ t_interrupt timer8::getInterruptMode()
 /*******************************************************************************
  * ISR for the timer class.
  ******************************************************************************/
-void timer8::interruptServiceRoutine(void)
+void timer16::interruptServiceRoutine(void)
 {
 	//TODO::check which interrupt is active.
 	_overflowCount++;						// timer_ovf_vect()
@@ -550,7 +564,7 @@ void timer8::interruptServiceRoutine(void)
 /*******************************************************************************
  * Enable timer interrupts.
  ******************************************************************************/
-void timer8::enable(void)
+void timer16::enable(void)
 {
 	//TODO::
 }
@@ -558,7 +572,7 @@ void timer8::enable(void)
 /*******************************************************************************
  * Disable timer interrupts.
  ******************************************************************************/
-void timer8::disable(void)
+void timer16::disable(void)
 {
 	//TODO::
 }
@@ -566,7 +580,7 @@ void timer8::disable(void)
 /*******************************************************************************
  * Clear timer interrupts.
  ******************************************************************************/
-void timer8::clear(void)
+void timer16::clear(void)
 {
 	//TODO::
 }
@@ -578,7 +592,7 @@ void timer8::clear(void)
  * 
  * Call from self.
  ******************************************************************************/
-ISR(TIMER2_OVF_vect)
+ISR(TIMER1_OVF_vect)
 {
 	if(_t)_t -> interruptServiceRoutine();
 }

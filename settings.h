@@ -15,7 +15,8 @@ enum class t_mode : uint8_t
 	NORMAL	= 1,
 	CTC	= 2,
 	PWM_F	= 3,
-	PWM_PC	= 4
+	PWM_PC	= 4,
+	PWM_FC	= 5
 };
 
 /*******************************************************************************
@@ -26,10 +27,10 @@ enum class t_interrupt : uint8_t
 	NONE	= 0,
 	OVF	= 1,
 	COMPA	= 2,
-	COMPB	= 3
-	//COMPAB= 4
-	//COMPC = 4;
+	COMPB	= 3,
+	COMPC	= 4
 	//CAPT  = 5;
+	//COMPAB	= 6
 };
 
 /*******************************************************************************
@@ -40,7 +41,11 @@ enum class t_channel : uint8_t
 	NONE	= 0,
 	A	= 1,
 	B	= 2,
-	AB	= 3
+	C	= 3,
+	AB	= 4,
+	BC	= 5,
+	AC	= 6,
+	ABC	= 7
 };
 
 #endif

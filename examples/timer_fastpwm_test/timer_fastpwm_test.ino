@@ -2,7 +2,7 @@
  * avr-timer-lib
  * timer_fastpwm_test.ino
  *
- * Test file for timer interrupts.
+ * Test file for Fast PWM mode.
  * I am using an arduino MEGA ADK (AVR atmega2560).
  * 
  * @author: 	Rob Mertens
@@ -18,7 +18,7 @@
 #define DDRLED DDRB
 #define OUTLED PORTB
 
-//TIMER2.
+//TIMER0.
 timer8 t0(0, &TCCR0A, &TCCR0B, &TCNT0, &TIMSK0, &OCR0A, &OCR0B);
 
 //INIT.
@@ -28,11 +28,10 @@ void setup()
 	DDRLED |= 0x80;
   	OUTLED &= 0x7F;
 	
-	//TIMER2 SETTINGS.	
+	//TIMER0 SETTINGS.	
 	t0.initialize(t_mode::PWM_F, t_channel::A, false);		// Non-inverted FAST PWM on channel A (T0 OC1A : PB7).
-									// I have a LED connected to PB7.
-	t0.setPrescaler(1024); 						// Available prescalers for T2: 1, 8, 64, 256, 1024.
-	t0.setDutyCycleA(1.0);
+	t0.setPrescaler(1024); 						// I have a LED connected to PB7.
+	t0.setDutyCycleA(1.0);						// Available prescalers for T0: 1, 8, 64, 256, 1024.
 	t0.reset();
 }
 

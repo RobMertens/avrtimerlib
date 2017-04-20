@@ -1,19 +1,21 @@
-#ifndef _TIMER8_H_
-#define _TIMER8_H_
+#ifndef _TIMER16_H_
+#define _TIMER16_H_
 
 #include <avr/interrupt.h>
 #include <interrupt.h>
 #include <settings.h>
 
 // ATMEGA2560
-extern "C" void TIMER0_OVF_vect(void) __attribute__ ((signal));
-extern "C" void TIMER2_OVF_vect(void) __attribute__ ((signal));
+extern "C" void TIMER1_OVF_vect(void) __attribute__ ((signal));
+extern "C" void TIMER3_OVF_vect(void) __attribute__ ((signal));
+extern "C" void TIMER4_OVF_vect(void) __attribute__ ((signal));
+extern "C" void TIMER5_OVF_vect(void) __attribute__ ((signal));
 
 class timer8 : private interrupt::handler
 {
 	public:
 		//Constructors ***************************************************************
-		timer8(uint8_t, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *);
+		timer8(uint8_t, volatile uint8_t *, volatile uint8_t *, volatile uint16_t *, volatile uint8_t *, volatile uint16_t *, volatile uint16_t *);
 		
 		//Setters ********************************************************************
 		void setAlias(uint8_t);
@@ -47,22 +49,21 @@ class timer8 : private interrupt::handler
 		t_interrupt getInterruptMode();		
 		
 	private:		
-		// Timer operation settings.
-		uint8_t _alias;
-		uint16_t _prescale;
+		uint8_t 	_alias;				// Timer operation settings.
+		uint16_t 	_prescale;
 		
-		t_mode _mode;
-		t_interrupt _interrupt;
-		t_channel _channel;
-		bool _inverted;
+		t_mode 		_mode;
+		t_interrupt 	_interrupt;
+		t_channel 	_channel;
+		bool 		_inverted;
 				
 		// Registers.
-		volatile uint8_t * _tcntx;			// TIMER COUNT
-		volatile uint8_t * _tccrxa;			// PRESCALER
-		volatile uint8_t * _tccrxb;			// PRESCALER
-		volatile uint8_t * _timskx;			// Timer Interrupt Mask register.
-		volatile uint8_t * _ocrxa;
-		volatile uint8_t * _ocrxb;
+		volatile uint16_t * _tcntx;			// TIMER COUNT
+		volatile uint8_t  * _tccrxa;			// PRESCALER
+		volatile uint8_t  * _tccrxb;			// PRESCALER
+		volatile uint8_t  * _timskx;			// Timer Interrupt Mask register.
+		volatile uint16_t * _ocrxa;
+		volatile uint16_t * _ocrxb;
 		
 		// Overflow.		
 		uint16_t _interruptCount;
@@ -70,17 +71,19 @@ class timer8 : private interrupt::handler
 		uint16_t _nonResetCount;
 		
 		// Friend void.	
-		friend void TIMER0_OVF_vect(void);
-		friend void TIMER2_OVF_vect(void);
+		friend void TIMER1_OVF_vect(void);
+		friend void TIMER3_OVF_vect(void);
+		friend void TIMER4_OVF_vect(void);
+		friend void TIMER5_OVF_vect(void);
 		
 		// Modes.
 		int8_t setMode(t_mode);
-		// Functions for NORMAL or CTC.
-		void setMode2Normal();
+
+		void setMode2Normal();				// Functions for NORMAL or CTC.
 		void setMode2Ctc();	
 		int8_t setInterruptMode(t_interrupt);
-		// Functions for PWM.
-		void setMode2FastPwm();
+		
+		void setMode2FastPwm();				// Functions for PWM.
 		void setMode2PhaseCorrectPwm();	
 		int8_t setPwmChannel(t_channel, bool);
 		
