@@ -41,6 +41,6 @@ enum class t_channel : uint8_t
 	A	= 1,
 	B	= 2,
 	AB	= 3
-}
+};
 
 #endif

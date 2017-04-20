@@ -66,22 +66,20 @@ void timer8::setAlias(uint8_t alias)
  * @param: interrupt The interrupt mode, default is NONE.
  * @param: compare TODO
  ******************************************************************************/
-int8_t timer8::setup(t_mode mode, t_interrupt interrupt, uint8_t compare)
+int8_t timer8::initialize(t_mode mode, t_interrupt interrupt, uint8_t compare)
 {
 	int8_t ret = 0;
-	
-	channel = t_channel::NONE;
 	
 	//t_mode
 	if(mode==t_mode::NORMAL or mode==t_mode::CTC)ret = setMode(mode);
 	if(ret==-1)return ret;
 	
 	//t_channel.
-	ret = setPwmChannel(channel, inverted=FALSE);
+	ret = setPwmChannel(t_channel::NONE, false);
 	if(ret==-1)return ret;
 	
 	//t_interrupt.
-	ret = setInterruptMode(interrupt, compare);
+	ret = setInterruptMode(interrupt);
 	return ret;
 }
 
@@ -93,18 +91,16 @@ int8_t timer8::setup(t_mode mode, t_interrupt interrupt, uint8_t compare)
  * @param: interrupt The interrupt mode, default is NONE.
  * @param: inverted TODO
  ******************************************************************************/
-int8_t timer8::setup(t_mode mode, t_channel channel, bool inverted)
+int8_t timer8::initialize(t_mode mode, t_channel channel, bool inverted)
 {
 	int8_t ret = 0;
-	
-	interrupt = t_interrupt::NONE;
 	
 	//t_mode
 	if(mode==t_mode::PWM_F or mode==t_mode::PWM_PC)ret = setMode(mode);
 	if(ret==-1)return ret;
 	
 	//t_interrupt.
-	ret = setInterruptMode(interrupt, compare=0x00);
+	ret = setInterruptMode(t_interrupt::NONE);
 	if(ret==-1)return ret;
 	
 	//t_channel.
@@ -113,28 +109,27 @@ int8_t timer8::setup(t_mode mode, t_channel channel, bool inverted)
 }
 
 /*******************************************************************************
- * Method for setting the timer mode 2 PWM. This method cannot set mode 2 NORMAL
- * or CTC.
+ * Method for setting the timer mode.
  *
- * @param: mode The timer operation mode, only PWM.
- * @param: interrupt The interrupt mode, default is NONE.
- * @param: inverted TODO
+ * @param: mode The timer operation mode.
  ******************************************************************************/
 int8_t timer8::setMode(t_mode mode)
 {
 	int8_t ret = 0;
 	
+	//Non-operational mode.
+	setPrescaler(0);
 	_mode = t_mode::NONE;
 	
 	//MODES.
 	switch(mode)
 	{
-		case t_mode::PWM_F :
-			setMode2FastPwm();
+		case t_mode::NORMAL :
+			setMode2Normal();
 			break;
 	
-		case t_mode::PWM_PC :
-			setMode2PhaseCorrectPwm();
+		case t_mode::CTC :
+			setMode2Ctc();
 			break;
 		
 		case t_mode::PWM_F :
@@ -146,13 +141,13 @@ int8_t timer8::setMode(t_mode mode)
 			break;
 		
 		case t_mode::NONE :
+			//Nothing.
+			break;
+		
 		default :
-			//TODO::reset timer.
 			ret = -1;
 			return ret;
 	}
-	
-	_mode = mode;
 
 	return ret;
 }
@@ -171,7 +166,8 @@ void timer8::setMode2Normal()
 								// COMxA1 = 0;
 	*_tccrxb &= ~(1 << 3); 					// WGMx2  = 0;
 	
-	//TODO::OCRxA
+	//Set var.
+	_mode = t_mode::NORMAL;
 }
 
 /*******************************************************************************
@@ -188,7 +184,8 @@ void timer8::setMode2Ctc()
 								// COMxA1 = 0;
 	*_tccrxb &= ~(1 << 3); 					// WGMx2  = 0;
 	
-	//TODO::OCRxA
+	//Set var.
+	_mode = t_mode::CTC;
 }
 
 /*******************************************************************************
@@ -196,17 +193,18 @@ void timer8::setMode2Ctc()
  *
  * @param: interrupt The timer interrupt mode.
  ******************************************************************************/
-int8_t timer8::setInterruptMode(t_interrupt interrupt, uint8_t compare)
+int8_t timer8::setInterruptMode(t_interrupt interrupt)
 {
 	int8_t ret = 0;
 	
 	_interrupt = t_interrupt::NONE;
+	*_timskx = 0x00;
 	
 	//INTERRUPT MODE.
 	switch(interrupt)
 	{
 		case t_interrupt::NONE : 
-			*_timskx = 0x00;
+			//Nothing.
 			break;
 	
 		case t_interrupt::OVF : 
@@ -215,12 +213,10 @@ int8_t timer8::setInterruptMode(t_interrupt interrupt, uint8_t compare)
 	
 		case t_interrupt::COMPA :
 			*_timskx = 0x02;
-			*_ocrxa  = compare;
 			break;
 	
 		case t_interrupt::COMPB :
 			*_timskx = 0x04;
-			*_ocrxb  = compare;
 			break;
 		
 		default :
@@ -245,10 +241,11 @@ void timer8::setMode2FastPwm()
 								// COMxB1 = 0;
 								// COMxA0 = 0;
 								// COMxA1 = 0;
-	*_tccrxb |=  (1 << 3); 					// WGMx2  = 1;
+	//*_tccrxb |=  (1 << 3); 					// WGMx2  = 1;
+	*_tccrxb &= ~(1 << 3); 
 	
-	//TODO::OCRxA
-	//TODO::inverted (y/n)
+	//Set var.
+	_mode = t_mode::PWM_F;
 }
 
 /*******************************************************************************
@@ -263,10 +260,11 @@ void timer8::setMode2PhaseCorrectPwm()
 								// COMxB1 = 0;
 								// COMxA0 = 0;
 								// COMxA1 = 0;
-	*_tccrxb |=  (1 << 3); 					// WGMx2  = 1;
+	//*_tccrxb |=  (1 << 3); 					// WGMx2  = 1;
+	*_tccrxb &= ~(1 << 3); 
 	
-	//TODO::OCRxA
-	//TODO::inverted (y/n)
+	//Set var.
+	_mode = t_mode::PWM_PC;
 }
 
 /*******************************************************************************
@@ -289,15 +287,18 @@ int8_t timer8::setPwmChannel(t_channel channel, bool inverted)
 			break;
 	
 		case t_channel::A : 
-			*_tccrxa |= 0x40;
+			if(!inverted)*_tccrxa |= 0x80;
+			else{*_tccrxa |= 0xC0;}
 			break;
 	
 		case t_channel::B :
-			*_tccrxa |= 0x20;
+			if(!inverted)*_tccrxa |= 0x20;
+			else{*_tccrxa |= 0x30;}
 			break;
 	
 		case t_channel::AB :
-			*_tccrxa |= 0xA0;
+			if(!inverted)*_tccrxa |= 0xA0;
+			else{*_tccrxa |= 0xF0;}
 			break;
 		
 		default :
@@ -306,6 +307,7 @@ int8_t timer8::setPwmChannel(t_channel channel, bool inverted)
 	}
 	
 	_channel = channel;
+	_inverted = inverted;
 	
 	return ret;
 }
@@ -391,7 +393,7 @@ void timer8::setPrescaler(uint16_t prescale)
  ******************************************************************************/
 void timer8::setCompareValueA(uint8_t compare)
 {
-	//TODO::
+	*_ocrxa = compare;
 }
 
 /*******************************************************************************
@@ -399,31 +401,67 @@ void timer8::setCompareValueA(uint8_t compare)
  ******************************************************************************/
 void timer8::setCompareValueB(uint8_t compare)
 {
-	//TODO::
+	*_ocrxb = compare;
 }
 
 /*******************************************************************************
  * 
  ******************************************************************************/
-void timer8::setPwmDutyCycleA(uint8_t dutyCycle)
+int8_t timer8::setDutyCycleA(double dutyCycle)
 {
-	//TODO::
+	int8_t ret = 0;
+	uint8_t compare = 0;
+	
+	if(_mode==t_mode::PWM_F or _mode==t_mode::PWM_PC)
+	{
+		if(dutyCycle > 1.0)dutyCycle=1.0;
+		else if(dutyCycle < 0.0)dutyCycle=0.0;
+		
+		compare = uint8_t(dutyCycle*0xFF);
+		
+		setCompareValueA(compare);
+	}
+	else
+	{
+		ret = -1;
+	}
+	
+	return ret;
 }
 
 /*******************************************************************************
  * 
  ******************************************************************************/
-void timer8::setPwmDutyCycleB(uint8_t dutyCycle)
+int8_t timer8::setDutyCycleB(double dutyCycle)
 {
-	//TODO::
+	int8_t ret = 0;
+	uint8_t compare = 0;
+	
+	if(_mode==t_mode::PWM_F or _mode==t_mode::PWM_PC)
+	{
+		if(dutyCycle > 1.0)dutyCycle=1.0;
+		else if(dutyCycle < 0.0)dutyCycle=0.0;
+		
+		compare = uint8_t(dutyCycle*0xFF);
+		
+		setCompareValueB(compare);
+	}
+	else
+	{
+		ret = -1;
+	}
+	
+	return ret;
 }
 
 /*******************************************************************************
  * 
  ******************************************************************************/
-void timer8::setPwmDutyCycleAB(uint8_t dutyCycleA, uint8_t dutyCycleB)
+int8_t timer8::setDutyCycleAB(double dutyCycleA, double dutyCycleB)
 {
 	//TODO::
+	
+	return -1;
 }
 
 /*******************************************************************************
@@ -482,6 +520,14 @@ uint16_t timer8::getNonResetCount()
 uint16_t timer8::getOverflowCount()
 {
 	return _overflowCount;
+}
+
+/*******************************************************************************
+ * 
+ ******************************************************************************/
+t_interrupt timer8::getInterruptMode()
+{
+	return _interrupt;
 }
 
 /*******************************************************************************
