@@ -29,8 +29,7 @@ void setup()
   	OUTLED &= 0x7F;
 	
 	//TIMER2 SETTINGS.	
-	t2.setMode(t_mode::FAST, t_pwm::FAST);
-	t2.setInterruptMode(t_interrupt::OVF);
+	t2.setMode(t_mode::PWM, t_pwm::FAST);
 	t2.setPrescaler(64); 				// Available prescalers for T2: 1, 8, 32, 64.
 	t2.reset();
 }

@@ -24,8 +24,7 @@ void setup()
 	Serial.begin(9600);
 	
 	//TIMER2 SETTINGS.	
-	t2.setMode(t_mode::NORMAL);
-	t2.setInterruptMode(t_interrupt::OVF);
+	t2.setMode(t_mode::NORMAL, t_interrupt::OVF);
 	t2.setPrescaler(64); 				// Available prescalers for T2: 1, 8, 32, 64.
 	t2.reset();
 }

@@ -2,13 +2,20 @@
 #define _SETTINGS_H_
 
 /*******************************************************************************
- * Timer modes.
+ * Available timer modes:
+ * 
+ * NONE 	: Non-operating mode.
+ * NORMAL 	: Normal mode.
+ * CTC		: Clear on Compare mode.
+ * PWM		: Phase Width Modulation mode.
  ******************************************************************************/
 enum class t_mode : uint8_t
 {
 	NONE	= 0,
 	NORMAL	= 1,
-	CTC	= 2
+	CTC	= 2,
+	PWM_F	= 3,
+	PWM_PC	= 4
 };
 
 /*******************************************************************************
@@ -20,18 +27,20 @@ enum class t_interrupt : uint8_t
 	OVF	= 1,
 	COMPA	= 2,
 	COMPB	= 3
+	//COMPAB= 4
 	//COMPC = 4;
 	//CAPT  = 5;
 };
 
 /*******************************************************************************
- * Types only in PWM.
+ * PWM channels.
  ******************************************************************************/
-enum class t_pwm : uint8_t
+enum class t_channel : uint8_t
 {
 	NONE	= 0,
-	FAST	= 1,
-	PC	= 2
-};
+	A	= 1,
+	B	= 2,
+	AB	= 3
+}
 
 #endif

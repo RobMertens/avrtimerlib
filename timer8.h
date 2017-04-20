@@ -29,8 +29,8 @@ class timer8 : private interrupt::handler
 		virtual void clear(void);
 		
 		//Getters ********************************************************************
-		int8_t setMode(t_mode, t_interrupt=t_interrupt::NONE, uint8_t=0x00);
-		int8_t setMode(t_pwm);
+		int8_t setup(t_mode, t_interrupt=t_interrupt::NONE, uint8_t=0x00);
+		int8_t setup(t_mode, t_channel, bool);
 		
 		uint8_t getCount();
 		uint16_t getNonResetCount();
@@ -44,6 +44,7 @@ class timer8 : private interrupt::handler
 		t_mode _mode;
 		t_interrupt _interrupt;
 		t_pwm _pwm;
+		bool _inverted;
 				
 		// Registers.
 		volatile uint8_t * _tcntx;			// TIMER COUNT
@@ -63,12 +64,15 @@ class timer8 : private interrupt::handler
 		friend void TIMER2_OVF_vect(void);
 		
 		// Modes.
+		int8_t setMode(t_mode)
+		// Functions for NORMAL or CTC.
 		void setMode2Normal();
-		void setMode2Ctc();
+		void setMode2Ctc();	
+		int8_t setInterruptMode(t_interrupt, uint8_t);
+		// Functions for PWM.
 		void setMode2FastPwm();
-		void setMode2PhaseCorrectPwm();		
-		void setInterruptMode(t_interrupt, uint8_t);
-		
+		void setMode2PhaseCorrectPwm();	
+		int8_t setPwmChannel(t_channel, bool);
 		
 };
 #endif
