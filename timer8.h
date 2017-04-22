@@ -6,18 +6,24 @@
 #include <settings.h>
 
 // ATMEGA2560
-extern "C" void TIMER0_OVF_vect(void) __attribute__ ((signal));
-extern "C" void TIMER2_OVF_vect(void) __attribute__ ((signal));
+extern "C" void TIMER0_OVF_vect(void) __attribute__((signal));
+extern "C" void TIMER2_OVF_vect(void) __attribute__((signal));
+
+extern "C" void TIMER0_COMPA_vect(void) __attribute__((signal));
+extern "C" void TIMER2_COMPA_vect(void) __attribute__((signal));
+
+extern "C" void TIMER0_COMPB_vect(void) __attribute__((signal));
+extern "C" void TIMER2_COMPB_vect(void) __attribute__((signal));
 
 class timer8 : private interrupt::handler
 {
 	public:
 		//Constructors ***************************************************************
-		timer8(uint8_t, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *);
+		timer8(t_alias);
+		timer8();		
+		timer8(volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *);
 		
 		//Setters ********************************************************************
-		void setAlias(uint8_t);
-		
 		void setCompareValueA(uint8_t);
 		void setCompareValueB(uint8_t);
 		
@@ -31,6 +37,8 @@ class timer8 : private interrupt::handler
 		virtual void clear(void);
 		
 		//Getters ********************************************************************
+		int8_t setAlias(t_alias);
+		
 		int8_t initialize(t_mode, t_interrupt, uint8_t=0x00);
 		int8_t initialize(t_mode, t_channel, bool);
 		
@@ -43,12 +51,16 @@ class timer8 : private interrupt::handler
 		uint8_t getCount();
 		uint16_t getNonResetCount();
 		uint16_t getOverflowCount();
+		uint16_t getCompareCount();
 		
-		t_interrupt getInterruptMode();		
+		t_alias getAlias();
+		t_mode getMode();
+		t_interrupt getInterruptMode();	
+		t_channel getPwmChannel();
 		
 	private:		
 		// Timer operation settings.
-		uint8_t _alias;
+		t_alias _alias;
 		uint16_t _prescale;
 		
 		t_mode _mode;
@@ -65,13 +77,13 @@ class timer8 : private interrupt::handler
 		volatile uint8_t * _ocrxb;
 		
 		// Overflow.		
-		uint16_t _interruptCount;
-		uint16_t _overflowCount;			// TODO::remember number of overflows.
+		uint16_t _overflowCount;
+		uint16_t _compareCount;
 		uint16_t _nonResetCount;
 		
-		// Friend void.	
-		friend void TIMER0_OVF_vect(void);
-		friend void TIMER2_OVF_vect(void);
+		// ALIAS.
+		void setRegistersT0();
+		void setRegistersT2();
 		
 		// Modes.
 		int8_t setMode(t_mode);
@@ -83,6 +95,18 @@ class timer8 : private interrupt::handler
 		void setMode2FastPwm();
 		void setMode2PhaseCorrectPwm();	
 		int8_t setPwmChannel(t_channel, bool);
+		
+		static timer8 * _t8[6];
+		
+		// Friend void.	
+		friend void TIMER0_OVF_vect(void);
+		friend void TIMER2_OVF_vect(void);
+		
+		friend void TIMER0_COMPA_vect(void);
+		friend void TIMER2_COMPA_vect(void);
+		
+		friend void TIMER0_COMPB_vect(void);
+		friend void TIMER2_COMPB_vect(void);
 		
 };
 #endif

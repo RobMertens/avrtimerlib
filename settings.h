@@ -9,6 +9,26 @@
  * CTC		: Clear on Compare mode.
  * PWM		: Phase Width Modulation mode.
  ******************************************************************************/
+enum class t_alias : int8_t
+{
+	NONE	= -1,
+	T0	= 0,
+	T1	= 1,
+	T2	= 2,
+	T3	= 3,
+	T4	= 4,
+	T5	= 5,
+	TX	= 6
+};
+
+/*******************************************************************************
+ * Available timer modes:
+ * 
+ * NONE 	: Non-operating mode.
+ * NORMAL 	: Normal mode.
+ * CTC		: Clear on Compare mode.
+ * PWM		: Phase Width Modulation mode.
+ ******************************************************************************/
 enum class t_mode : uint8_t
 {
 	NONE	= 0,

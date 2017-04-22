@@ -14,12 +14,38 @@
 #include <timer8.h>
 
 /*******************************************************************************
- * Global forward declaration.
+ * Constructor for a 16-bit timer, e.g.: timer0 on MEGA2560.
  * 
- * TODO::this static instance is used for all timer8 instances, does this work?
- *	 for each timer instance a new static instance and reference to ISR.
+ * TODO::auto pin-map w/ alias function.
+ *
+ * @param: tccr The timer control register.
+ * @param: tcnt The timer count register.
  ******************************************************************************/
-static timer8 *_t;
+timer8::timer8(t_alias alias)
+{
+	setAlias(alias);
+	
+	_overflowCount  = 0;
+	_compareCount   = 0;
+	_nonResetCount  = 0;	
+}
+
+/*******************************************************************************
+ * Constructor for a 16-bit timer, e.g.: timer0 on MEGA2560.
+ * 
+ * TODO::auto pin-map w/ alias function.
+ *
+ * @param: tccr The timer control register.
+ * @param: tcnt The timer count register.
+ ******************************************************************************/
+timer8::timer8()
+{
+	_alias = t_alias::NONE;
+	
+	_overflowCount  = 0;
+	_compareCount   = 0;
+	_nonResetCount  = 0;	
+}
 
 /*******************************************************************************
  * Constructor for a 8-bit timer, e.g.: timer0 on MEGA2560.
@@ -29,9 +55,8 @@ static timer8 *_t;
  * @param: tccr The timer control register.
  * @param: tcnt The timer count register.
  ******************************************************************************/
-timer8::timer8(uint8_t alias, volatile uint8_t * tccrxa, volatile uint8_t * tccrxb, volatile uint8_t * tcntx, volatile uint8_t * timskx, volatile uint8_t * ocrxa, volatile uint8_t * ocrxb)
+timer8::timer8(volatile uint8_t * tccrxa, volatile uint8_t * tccrxb, volatile uint8_t * tcntx, volatile uint8_t * timskx, volatile uint8_t * ocrxa, volatile uint8_t * ocrxb)
 {
-	_alias  = alias;						// TIMER0 or TIMER2.
 	_tccrxa = tccrxa;						// Timer Count Control Register.
 	_tccrxb = tccrxb;						// Timer Count Control Register.
 	_tcntx  = tcntx;						// Timer Count register.
@@ -39,23 +64,76 @@ timer8::timer8(uint8_t alias, volatile uint8_t * tccrxa, volatile uint8_t * tccr
 	_ocrxa  = ocrxa;
 	_ocrxb  = ocrxb;
 	
-	_interruptCount = 0;
-	_overflowCount = 0;
-	_nonResetCount = 0;
+	_alias = t_alias::TX;
 	
-	_t = this;							// Instance of itself for ISR.
+	_overflowCount  = 0;
+	_compareCount   = 0;
+	_nonResetCount  = 0;
+	
+	_t8[6] = this;							// Instance of itself for ISR.
 }
 
 /*******************************************************************************
- * Method for setting the timer alias.
+ * Method for setting the timer alias and corresponding registers.
  *
- * TODO::auto pin-map.
- *
- * @param: timer The timer alias.
+ * @param: alias The timer alias.
  ******************************************************************************/
-void timer8::setAlias(uint8_t alias)
+int8_t timer8::setAlias(t_alias alias)
 {
-	_alias	= alias;
+	int8_t ret = 0;
+	
+	_alias = t_alias::NONE;
+	
+	switch(alias)
+	{
+		case t_alias::T0 :
+			setRegistersT0();
+			break;
+		
+		case t_alias::T2 :
+			setRegistersT2();
+			break;
+		
+		case t_alias::NONE :
+		case t_alias::T1 :
+		case t_alias::T3 :
+		case t_alias::T4 :
+		case t_alias::T5 :		
+		case t_alias::TX :
+		default :
+			ret = -1;
+			return ret;
+	}
+	
+	_alias = alias;
+	
+	return ret;
+}
+
+/*******************************************************************************
+ * Method for setting the registers as T0 (atmega2560).
+ ******************************************************************************/
+void timer8::setRegistersT0()
+{
+	_tccrxa = (volatile uint8_t *)0x44;
+	_tccrxb = (volatile uint8_t *)0x45;
+	_tcntx  = (volatile uint8_t *)0x46;
+	_timskx = (volatile uint8_t *)0x6E;
+	_ocrxa  = (volatile uint8_t *)0x47;
+	_ocrxb  = (volatile uint8_t *)0x48;
+}
+
+/*******************************************************************************
+ * Method for setting the registers as T2 (atmega2560).
+ ******************************************************************************/
+void timer8::setRegistersT2()
+{
+	_tccrxa = (volatile uint8_t *)0xB0;
+	_tccrxb = (volatile uint8_t *)0xB1;
+	_tcntx  = (volatile uint8_t *)0xB2;
+	_timskx = (volatile uint8_t *)0x70;
+	_ocrxa  = (volatile uint8_t *)0xB3;
+	_ocrxb  = (volatile uint8_t *)0xB4;
 }
 
 /*******************************************************************************
@@ -80,6 +158,13 @@ int8_t timer8::initialize(t_mode mode, t_interrupt interrupt, uint8_t compare)
 	
 	//t_interrupt.
 	ret = setInterruptMode(interrupt);
+	if(ret==-1)return ret;
+	
+	//Compare value.
+	if(_interrupt==t_interrupt::COMPA)setCompareValueA(compare);
+	else if(_interrupt==t_interrupt::COMPB)setCompareValueB(compare);
+	else{ret=-1;}
+	
 	return ret;
 }
 
@@ -105,6 +190,7 @@ int8_t timer8::initialize(t_mode mode, t_channel channel, bool inverted)
 	
 	//t_channel.
 	ret = setPwmChannel(channel, inverted);
+	
 	return ret;
 }
 
@@ -210,14 +296,20 @@ int8_t timer8::setInterruptMode(t_interrupt interrupt)
 	
 		case t_interrupt::OVF : 
 			*_timskx = 0x01;
+			if(_alias==t_alias::T0)_t8[0] = this;
+			else{_t8[1] = this;}
 			break;
 	
 		case t_interrupt::COMPA :
 			*_timskx = 0x02;
+			if(_alias==t_alias::T0)_t8[2] = this;
+			else{_t8[3] = this;}
 			break;
 	
 		case t_interrupt::COMPB :
 			*_timskx = 0x04;
+			if(_alias==t_alias::T0)_t8[4] = this;
+			else{_t8[5] = this;}
 			break;
 		
 		case t_interrupt::COMPC :
@@ -303,7 +395,7 @@ int8_t timer8::setPwmChannel(t_channel channel, bool inverted)
 			else{*_tccrxa |= 0xF0;}
 			break;
 		
-		case t_channel::B :
+		case t_channel::C :
 		case t_channel::BC :
 		case t_channel::AC :
 		case t_channel::ABC :
@@ -340,7 +432,7 @@ int8_t timer8::setPrescaler(uint16_t prescale)
 	_prescale = 0;
 	*_tccrxb &= 0xF8;
 	
-	if(_alias!=0 or _alias!=2)
+	if(_alias!=t_alias::T0 or _alias!=t_alias::T2)
 	{
 		ret = -1;
 		return ret;
@@ -362,22 +454,22 @@ int8_t timer8::setPrescaler(uint16_t prescale)
 			break;
 		
 		case 32 :
-			if(_alias==2)*_tccrxb |= 0x03;
+			if(_alias==t_alias::T2)*_tccrxb |= 0x03;
 			else{ret=-1;return ret;}
 			break;
 		
 		case 64 :
-			if(_alias==0)*_tccrxb |= 0x03;
+			if(_alias==t_alias::T0)*_tccrxb |= 0x03;
 			else{*_tccrxb |= 0x04;}
 			break;
 			
 		case 256 :
-			if(_alias==0)*_tccrxb |= 0x04;
+			if(_alias==t_alias::T0)*_tccrxb |= 0x04;
 			else{ret=-1;return ret;}
 			break;
 	
 		case 1024 :
-			if(_alias==0)*_tccrxb |= 0x05;
+			if(_alias==t_alias::T0)*_tccrxb |= 0x05;
 			else{ret=-1;return ret;}
 			break;
 		
@@ -424,7 +516,7 @@ int8_t timer8::setDutyCycleA(double dutyCycle)
 		if(dutyCycle > 1.0)dutyCycle=1.0;
 		else if(dutyCycle < 0.0)dutyCycle=0.0;
 		
-		compare = uint8_t(dutyCycle*0xFF-1);
+		compare = (uint8_t)(dutyCycle*0xFF - 1);
 		
 		setCompareValueA(compare);
 	}
@@ -449,7 +541,7 @@ int8_t timer8::setDutyCycleB(double dutyCycle)
 		if(dutyCycle > 1.0)dutyCycle=1.0;
 		else if(dutyCycle < 0.0)dutyCycle=0.0;
 		
-		compare = uint8_t(dutyCycle*0xFF-1);
+		compare = (uint8_t)(dutyCycle*0xFF - 1);
 		
 		setCompareValueB(compare);
 	}
@@ -532,9 +624,41 @@ uint16_t timer8::getOverflowCount()
 /*******************************************************************************
  * 
  ******************************************************************************/
+uint16_t timer8::getCompareCount()
+{
+	return _compareCount;
+}
+
+/*******************************************************************************
+ * 
+ ******************************************************************************/
+t_alias timer8::getAlias()
+{
+	return _alias;
+}
+
+/*******************************************************************************
+ * 
+ ******************************************************************************/
+t_mode timer8::getMode()
+{
+	return _mode;
+}
+
+/*******************************************************************************
+ * 
+ ******************************************************************************/
 t_interrupt timer8::getInterruptMode()
 {
 	return _interrupt;
+}
+
+/*******************************************************************************
+ * 
+ ******************************************************************************/
+t_channel timer8::getPwmChannel()
+{
+	return _channel;
 }
 
 /*******************************************************************************
@@ -542,9 +666,14 @@ t_interrupt timer8::getInterruptMode()
  ******************************************************************************/
 void timer8::interruptServiceRoutine(void)
 {
-	//TODO::check which interrupt is active.
-	_overflowCount++;						// timer_ovf_vect()
-	//_interruptCount++;						// timer_comp_vect()
+	if(_interrupt==t_interrupt::OVF)
+	{
+		_overflowCount++;
+	}
+	else if(_interrupt==t_interrupt::COMPA or _interrupt==t_interrupt::COMPB)
+	{
+		_compareCount++;
+	}
 }
 
 /*******************************************************************************
@@ -572,15 +701,67 @@ void timer8::clear(void)
 }
 
 /*******************************************************************************
- * ISR -> myISR().
+ * Global forward declaration.
+ ******************************************************************************/
+timer8 * timer8::_t8[6] = {};
+
+/*******************************************************************************
+ * OVF -> ISR().
  * 
- * TODO::different vectors and chips.
+ * TODO::different avrs.
  * 
  * Call from self.
  ******************************************************************************/
-ISR(TIMER2_OVF_vect)
-{
-	if(_t)_t -> interruptServiceRoutine();
+#define TIMER_OVF(t, n)								\
+ISR(TIMER ## t ## _OVF_vect)							\
+{										\
+	if(timer8::_t8[n])timer8::_t8[n] -> interruptServiceRoutine();		\
 }
 
+#if defined(TIMER0_OVF_vect)
+//TIMER_OVF(0, 0)
+#endif
+#if defined(TIMER2_OVF_vect)
+TIMER_OVF(2, 1)
+#endif
+
+/*******************************************************************************
+ * COMPA -> ISR().
+ * 
+ * TODO::different avrs.
+ * 
+ * Call from self.
+ ******************************************************************************/
+#define TIMER_COMPA(t, n)							\
+ISR(TIMER ## t ## _COMPA_vect)							\
+{										\
+	if(timer8::_t8[n])timer8::_t8[n] -> interruptServiceRoutine();		\
+}
+
+#if defined(TIMER0_COMPA_vect)
+TIMER_COMPA(0, 2)
+#endif
+#if defined(TIMER2_COMPA_vect)
+TIMER_COMPA(2, 3)
+#endif
+
+/*******************************************************************************
+ * COMPB -> ISR().
+ * 
+ * TODO::different avrs.
+ * 
+ * Call from self.
+ ******************************************************************************/
+#define TIMER_COMPB(t, n)							\
+ISR(TIMER ## t ## _COMPB_vect)							\
+{										\
+	if(timer8::_t8[n])timer8::_t8[n] -> interruptServiceRoutine();		\
+}
+
+#if defined(TIMER0_COMPB_vect)
+TIMER_COMPB(0, 4)
+#endif
+#if defined(TIMER2_COMPB_vect)
+TIMER_COMPB(2, 5)
+#endif
  
