@@ -264,7 +264,7 @@ void timer8::setMode2Ctc()
 {
 	//CTC Mode.
 	*_tccrxa &= 0x0C;					// WGMx0  = 0;
-	*_tccrxa |=  (1 << 2);					// WGMx1  = 1;
+	*_tccrxa |=  (1 << 1);					// WGMx1  = 1;
 								// COMxB0 = 0;
 								// COMxB1 = 0;
 								// COMxA0 = 0;
@@ -432,11 +432,15 @@ int8_t timer8::setPrescaler(uint16_t prescale)
 	_prescale = 0;
 	*_tccrxb &= 0xF8;
 	
-	if(_alias!=t_alias::T0 or _alias!=t_alias::T2)
+	if(_alias!=t_alias::T0 and _alias!=t_alias::T2)
 	{
 		ret = -1;
 		return ret;
 	}
+	
+	//Reset compare registers.
+	setCompareValueA(0x00);
+	setCompareValueB(0x00);
 	
 	switch(prescale)
 	{
@@ -706,62 +710,36 @@ void timer8::clear(void)
 timer8 * timer8::_t8[6] = {};
 
 /*******************************************************************************
- * OVF -> ISR().
+ * __vector_x -> ISR().
  * 
  * TODO::different avrs.
  * 
  * Call from self.
  ******************************************************************************/
-#define TIMER_OVF(t, n)								\
-ISR(TIMER ## t ## _OVF_vect)							\
+#define TIMER_ISR(t, vect, n)							\
+ISR(TIMER ## t ## _ ## vect ## _vect)						\
 {										\
 	if(timer8::_t8[n])timer8::_t8[n] -> interruptServiceRoutine();		\
 }
 
 #if defined(TIMER0_OVF_vect)
-//TIMER_OVF(0, 0)
+//TIMER_ISR(0, OVF, 0)
 #endif
 #if defined(TIMER2_OVF_vect)
-TIMER_OVF(2, 1)
+TIMER_ISR(2, OVF, 1)
 #endif
-
-/*******************************************************************************
- * COMPA -> ISR().
- * 
- * TODO::different avrs.
- * 
- * Call from self.
- ******************************************************************************/
-#define TIMER_COMPA(t, n)							\
-ISR(TIMER ## t ## _COMPA_vect)							\
-{										\
-	if(timer8::_t8[n])timer8::_t8[n] -> interruptServiceRoutine();		\
-}
 
 #if defined(TIMER0_COMPA_vect)
-TIMER_COMPA(0, 2)
+TIMER_ISR(0, COMPA, 2)
 #endif
 #if defined(TIMER2_COMPA_vect)
-TIMER_COMPA(2, 3)
+TIMER_ISR(2, COMPA, 3)
 #endif
-
-/*******************************************************************************
- * COMPB -> ISR().
- * 
- * TODO::different avrs.
- * 
- * Call from self.
- ******************************************************************************/
-#define TIMER_COMPB(t, n)							\
-ISR(TIMER ## t ## _COMPB_vect)							\
-{										\
-	if(timer8::_t8[n])timer8::_t8[n] -> interruptServiceRoutine();		\
-}
 
 #if defined(TIMER0_COMPB_vect)
-TIMER_COMPB(0, 4)
+TIMER_ISR(0, COMPB, 4)
 #endif
 #if defined(TIMER2_COMPB_vect)
-TIMER_COMPB(2, 5)
+TIMER_ISR(2, COMPB, 5)
 #endif
  

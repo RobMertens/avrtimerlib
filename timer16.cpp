@@ -316,7 +316,7 @@ void timer16::setMode2Ctc()
 {
 	//CTC Mode.
 	*_tccrxa &= 0x0C;					// WGMx0  = 0;
-	*_tccrxa |=  (1 << 2);					// WGMx1  = 1;
+	*_tccrxa |=  (1 << 1);					// WGMx1  = 1;
 								// COMxB0 = 0;
 								// COMxB1 = 0;
 								// COMxA0 = 0;
@@ -338,6 +338,12 @@ int8_t timer16::setInterruptMode(t_interrupt interrupt, uint16_t compare)
 	
 	_interrupt = t_interrupt::NONE;
 	*_timskx = 0x00;
+	
+	if(_alias!=t_alias::T1 and _alias!=t_alias::T3 and _alias!=t_alias::T4 and _alias!=t_alias::T5)
+	{
+		ret = -1;
+		return ret;
+	}
 	
 	//Reset compare registers.
 	setCompareValueA(0x0000);
@@ -431,7 +437,7 @@ void timer16::setMode2PhaseCorrectPwm()
 	//Phase Correct PWM.
 	*_tccrxa &= 0x0C;					// WGMx0  = 1;
 	*_tccrxa |=  (1 << 0);					// WGMx1  = 0;
-	*_tccrxa &= ~(1 << 1);					// COMxB0 = 0;
+								// COMxB0 = 0;
 								// COMxB1 = 0;
 								// COMxA0 = 0;
 								// COMxA1 = 0;
@@ -810,105 +816,66 @@ void timer16::clear(void)
 timer16 * timer16::_t16[16] = {};
 
 /*******************************************************************************
- * OVF -> ISR().
+ * _vector__x -> ISR().
  * 
  * TODO::different avrs.
  * 
  * Call from self.
  ******************************************************************************/
-#define TIMER_OVF(t, n)								\
-ISR(TIMER ## t ## _OVF_vect)							\
+#define TIMER_ISR(t, vect, n)							\
+ISR(TIMER ## t ## _ ## vect ## _vect)						\
 {										\
 	if(timer16::_t16[n])timer16::_t16[n] -> interruptServiceRoutine();	\
 }
 
 #if defined(TIMER1_OVF_vect)
-TIMER_OVF(1, 0)
+TIMER_ISR(1, OVF, 0)
 #endif
 #if defined(TIMER3_OVF_vect)
-TIMER_OVF(3, 1)
+TIMER_ISR(3, OVF, 1)
 #endif
 #if defined(TIMER4_OVF_vect)
-TIMER_OVF(4, 2)
+TIMER_ISR(4, OVF, 2)
 #endif
 #if defined(TIMER5_OVF_vect)
-TIMER_OVF(5, 3)
+TIMER_ISR(5, OVF, 3)
 #endif
-
-/*******************************************************************************
- * COMPA -> ISR().
- * 
- * TODO::different avrs.
- * 
- * Call from self.
- ******************************************************************************/
-#define TIMER_COMPA(t, n)							\
-ISR(TIMER ## t ## _COMPA_vect)							\
-{										\
-	if(timer16::_t16[n])timer16::_t16[n] -> interruptServiceRoutine();	\
-}
 
 #if defined(TIMER1_COMPA_vect)
-TIMER_COMPA(1, 4)
+TIMER_ISR(1, COMPA, 4)
 #endif
 #if defined(TIMER3_COMPA_vect)
-TIMER_COMPA(3, 5)
+TIMER_ISR(3, COMPA, 5)
 #endif
 #if defined(TIMER4_COMPA_vect)
-TIMER_COMPA(4, 6)
+TIMER_ISR(4, COMPA, 6)
 #endif
 #if defined(TIMER5_COMPA_vect)
-TIMER_COMPA(5, 7)
+TIMER_ISR(5, COMPA, 7)
 #endif
-
-/*******************************************************************************
- * COMPB -> ISR().
- * 
- * TODO::different avrs.
- * 
- * Call from self.
- ******************************************************************************/
-#define TIMER_COMPB(t, n)							\
-ISR(TIMER ## t ## _COMPB_vect)							\
-{										\
-	if(timer16::_t16[n])timer16::_t16[n] -> interruptServiceRoutine();	\
-}
 
 #if defined(TIMER1_COMPB_vect)
-TIMER_COMPB(1, 8)
+TIMER_ISR(1, COMPB, 8)
 #endif
 #if defined(TIMER3_COMPB_vect)
-TIMER_COMPB(3, 9)
+TIMER_ISR(3, COMPB, 9)
 #endif
 #if defined(TIMER4_COMPB_vect)
-TIMER_COMPB(4, 10)
+TIMER_ISR(4, COMPB, 10)
 #endif
 #if defined(TIMER5_COMPB_vect)
-TIMER_COMPB(5, 11)
+TIMER_ISR(5, COMPB, 11)
 #endif
-
-/*******************************************************************************
- * COMPC -> ISR().
- * 
- * TODO::different avrs.
- * 
- * Call from self.
- ******************************************************************************/
-#define TIMER_COMPC(t, n)							\
-ISR(TIMER ## t ## _COMPC_vect)							\
-{										\
-	if(timer16::_t16[n])timer16::_t16[n] -> interruptServiceRoutine();	\
-}
 
 #if defined(TIMER1_COMPC_vect)
-TIMER_COMPC(1, 12)
+TIMER_ISR(1, COMPC, 12)
 #endif
 #if defined(TIMER3_COMPC_vect)
-TIMER_COMPC(3, 13)
+TIMER_ISR(3, COMPC, 13)
 #endif
 #if defined(TIMER4_COMPC_vect)
-TIMER_COMPC(4, 14)
+TIMER_ISR(4, COMPC, 14)
 #endif
 #if defined(TIMER5_COMPC_vect)
-TIMER_COMPC(5, 15)
+TIMER_ISR(5, COMPC, 15)
 #endif
