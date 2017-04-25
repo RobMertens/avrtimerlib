@@ -235,7 +235,7 @@ int8_t timer16::initialize(t_mode mode, t_channel channel, bool inverted)
 	if(ret==-1)return ret;
 	
 	//t_interrupt.
-	ret = setInterruptMode(t_interrupt::NONE);
+	ret = setInterruptMode(t_interrupt::NONE, 0x0000);
 	if(ret==-1)return ret;
 	
 	//t_channel.
@@ -716,7 +716,7 @@ uint16_t timer16::getCount()
  * 
  * @return: _nonResetCount The count value since last reset.
  ******************************************************************************/
-uint16_t timer16::getNonResetCount()
+uint32_t timer16::getNonResetCount()
 {
 	//TODO::calculations.
 	
@@ -726,7 +726,7 @@ uint16_t timer16::getNonResetCount()
 /*******************************************************************************
  * 
  ******************************************************************************/
-uint16_t timer16::getOverflowCount()
+uint32_t timer16::getOverflowCount()
 {
 	return _overflowCount;
 }
@@ -734,7 +734,7 @@ uint16_t timer16::getOverflowCount()
 /*******************************************************************************
  * 
  ******************************************************************************/
-uint16_t timer16::getCompareCount()
+uint32_t timer16::getCompareCount()
 {
 	return _compareCount;
 }

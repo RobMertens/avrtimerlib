@@ -2,8 +2,8 @@
 #define _TIMER16_H_
 
 #include <avr/interrupt.h>
-#include <interrupt.h>
-#include <settings.h>
+#include <cores/interrupt.h>
+#include <cores/settings.h>
 
 // ATMEGA2560
 extern "C" void TIMER1_OVF_vect(void) __attribute__ ((signal));
@@ -61,9 +61,9 @@ class timer16 : private interrupt::handler
 		int8_t setDutyCycleAB(double, double);
 		
 		uint16_t getCount();
-		uint16_t getNonResetCount();
-		uint16_t getOverflowCount();
-		uint16_t getCompareCount();
+		uint32_t getNonResetCount();
+		uint32_t getOverflowCount();
+		uint32_t getCompareCount();
 
 		t_alias getAlias();
 		t_mode getMode();
@@ -93,9 +93,9 @@ class timer16 : private interrupt::handler
 		volatile uint8_t * _ocrxch;
 		
 		// Overflow.		
-		uint16_t _overflowCount;
-		uint16_t _compareCount;
-		uint16_t _nonResetCount;
+		uint32_t _overflowCount;
+		uint32_t _compareCount;
+		uint32_t _nonResetCount;
 		
 		// ALIAS.
 		void setRegistersT1();

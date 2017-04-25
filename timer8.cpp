@@ -157,14 +157,9 @@ int8_t timer8::initialize(t_mode mode, t_interrupt interrupt, uint8_t compare)
 	if(ret==-1)return ret;
 	
 	//t_interrupt.
-	ret = setInterruptMode(interrupt);
+	ret = setInterruptMode(interrupt, compare);
 	if(ret==-1)return ret;
-	
-	//Compare value.
-	if(_interrupt==t_interrupt::COMPA)setCompareValueA(compare);
-	else if(_interrupt==t_interrupt::COMPB)setCompareValueB(compare);
-	else{ret=-1;}
-	
+
 	return ret;
 }
 
@@ -185,7 +180,7 @@ int8_t timer8::initialize(t_mode mode, t_channel channel, bool inverted)
 	if(ret==-1)return ret;
 	
 	//t_interrupt.
-	ret = setInterruptMode(t_interrupt::NONE);
+	ret = setInterruptMode(t_interrupt::NONE, 0x00);
 	if(ret==-1)return ret;
 	
 	//t_channel.
@@ -280,12 +275,15 @@ void timer8::setMode2Ctc()
  *
  * @param: interrupt The timer interrupt mode.
  ******************************************************************************/
-int8_t timer8::setInterruptMode(t_interrupt interrupt)
+int8_t timer8::setInterruptMode(t_interrupt interrupt, uint8_t compare)
 {
 	int8_t ret = 0;
 	
+	//RESET VARS.
 	_interrupt = t_interrupt::NONE;
 	*_timskx = 0x00;
+	setCompareValueA(0x00);
+	setCompareValueB(0x00);
 	
 	//INTERRUPT MODE.
 	switch(interrupt)
@@ -296,20 +294,27 @@ int8_t timer8::setInterruptMode(t_interrupt interrupt)
 	
 		case t_interrupt::OVF : 
 			*_timskx = 0x01;
+			
 			if(_alias==t_alias::T0)_t8[0] = this;
 			else{_t8[1] = this;}
 			break;
 	
 		case t_interrupt::COMPA :
 			*_timskx = 0x02;
+			
 			if(_alias==t_alias::T0)_t8[2] = this;
 			else{_t8[3] = this;}
+			
+			setCompareValueA(compare);
 			break;
 	
 		case t_interrupt::COMPB :
 			*_timskx = 0x04;
+			
 			if(_alias==t_alias::T0)_t8[4] = this;
 			else{_t8[5] = this;}
+			
+			setCompareValueB(compare);
 			break;
 		
 		case t_interrupt::COMPC :
@@ -437,10 +442,6 @@ int8_t timer8::setPrescaler(uint16_t prescale)
 		ret = -1;
 		return ret;
 	}
-	
-	//Reset compare registers.
-	setCompareValueA(0x00);
-	setCompareValueB(0x00);
 	
 	switch(prescale)
 	{
@@ -589,7 +590,7 @@ void timer8::reset()
 void timer8::hardReset()
 {
 	setMode(t_mode::NORMAL);
-	setInterruptMode(t_interrupt::NONE);
+	setInterruptMode(t_interrupt::NONE, 0x00);
 	setPrescaler(0);
 	reset();
 }
@@ -603,6 +604,16 @@ uint8_t timer8::getCount()
 }
 
 /*******************************************************************************
+ * 
+ ******************************************************************************/
+uint8_t timer8::getTime()
+{
+	//TODO::calculations.
+	
+	return *_tcntx;
+}
+
+/*******************************************************************************
  * Method for obtaining the total summized count since the last reset. Thus
  * overflows are accounted.
  * 
@@ -610,7 +621,7 @@ uint8_t timer8::getCount()
  * 
  * @return: _nonResetCount The count value since last reset.
  ******************************************************************************/
-uint16_t timer8::getNonResetCount()
+uint32_t timer8::getNonResetCount()
 {
 	//TODO::calculations.
 	
@@ -620,7 +631,7 @@ uint16_t timer8::getNonResetCount()
 /*******************************************************************************
  * 
  ******************************************************************************/
-uint16_t timer8::getOverflowCount()
+uint32_t timer8::getOverflowCount()
 {
 	return _overflowCount;
 }
@@ -628,7 +639,7 @@ uint16_t timer8::getOverflowCount()
 /*******************************************************************************
  * 
  ******************************************************************************/
-uint16_t timer8::getCompareCount()
+uint32_t timer8::getCompareCount()
 {
 	return _compareCount;
 }

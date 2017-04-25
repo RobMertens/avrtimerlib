@@ -2,8 +2,8 @@
 #define _TIMER8_H_
 
 #include <avr/interrupt.h>
-#include <interrupt.h>
-#include <settings.h>
+#include <cores/interrupt.h>
+#include <cores/settings.h>
 
 // ATMEGA2560
 extern "C" void TIMER0_OVF_vect(void) __attribute__((signal));
@@ -49,9 +49,13 @@ class timer8 : private interrupt::handler
 		int8_t setDutyCycleAB(double, double);
 		
 		uint8_t getCount();
-		uint16_t getNonResetCount();
-		uint16_t getOverflowCount();
-		uint16_t getCompareCount();
+		uint8_t getTime();
+
+		uint32_t getNonResetCount();
+		uint32_t getOverflowCount();
+		uint32_t getCompareCount();
+		
+		
 		
 		t_alias getAlias();
 		t_mode getMode();
@@ -59,6 +63,14 @@ class timer8 : private interrupt::handler
 		t_channel getPwmChannel();
 		
 	private:		
+		// Registers.
+		volatile uint8_t * _tcntx;			// TIMER COUNT
+		volatile uint8_t * _tccrxa;			// PRESCALER
+		volatile uint8_t * _tccrxb;			// PRESCALER
+		volatile uint8_t * _timskx;			// Timer Interrupt Mask register.
+		volatile uint8_t * _ocrxa;
+		volatile uint8_t * _ocrxb;
+
 		// Timer operation settings.
 		t_alias _alias;
 		uint16_t _prescale;
@@ -67,19 +79,15 @@ class timer8 : private interrupt::handler
 		t_interrupt _interrupt;
 		t_channel _channel;
 		bool _inverted;
-				
-		// Registers.
-		volatile uint8_t * _tcntx;			// TIMER COUNT
-		volatile uint8_t * _tccrxa;			// PRESCALER
-		volatile uint8_t * _tccrxb;			// PRESCALER
-		volatile uint8_t * _timskx;			// Timer Interrupt Mask register.
-		volatile uint8_t * _ocrxa;
-		volatile uint8_t * _ocrxb;
 		
-		// Overflow.		
-		uint16_t _overflowCount;
-		uint16_t _compareCount;
-		uint16_t _nonResetCount;
+		double _frequency;				//Ticks 2 Time
+		
+		// Operational vars.
+		uint32_t _overflowCount;
+		uint32_t _compareCount;
+		uint32_t _nonResetCount;
+		
+		uint32_t _time;
 		
 		// ALIAS.
 		void setRegistersT0();
@@ -90,7 +98,7 @@ class timer8 : private interrupt::handler
 		// Functions for NORMAL or CTC.
 		void setMode2Normal();
 		void setMode2Ctc();	
-		int8_t setInterruptMode(t_interrupt);
+		int8_t setInterruptMode(t_interrupt, uint8_t);
 		// Functions for PWM.
 		void setMode2FastPwm();
 		void setMode2PhaseCorrectPwm();	

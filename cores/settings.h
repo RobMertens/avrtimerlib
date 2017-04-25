@@ -1,5 +1,5 @@
-#ifndef _SETTINGS_H_
-#define _SETTINGS_H_
+#ifndef _T_SETTINGS_H_
+#define _T_SETTINGS_H_
 
 /*******************************************************************************
  * Available timer modes:
