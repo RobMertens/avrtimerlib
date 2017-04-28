@@ -44,9 +44,8 @@ class timer8 : private interrupt::handler
 		
 		int8_t setPrescaler(uint16_t);
 		
-		int8_t setDutyCycleA(double);
-		int8_t setDutyCycleB(double);
-		int8_t setDutyCycleAB(double, double);
+		int8_t setDutyCycleA(float);
+		int8_t setDutyCycleB(float);
 		
 		uint8_t getCount();
 		uint8_t getTime();
@@ -82,9 +81,9 @@ class timer8 : private interrupt::handler
 		
 		double _frequency;				//Ticks 2 Time
 		
-		// Operational vars.
-		uint32_t _overflowCount;
-		uint32_t _compareCount;
+		// Overflow.
+		uint16_t _top;		
+		uint32_t _interruptFlagCount;
 		uint32_t _nonResetCount;
 		
 		uint32_t _time;
@@ -104,7 +103,7 @@ class timer8 : private interrupt::handler
 		void setMode2PhaseCorrectPwm();	
 		int8_t setPwmChannel(t_channel, bool);
 		
-		static timer8 * _t8[6];
+		static timer8 * _t8[7];
 		
 		// Friend void.	
 		friend void TIMER0_OVF_vect(void);

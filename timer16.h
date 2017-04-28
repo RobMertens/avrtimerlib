@@ -52,7 +52,7 @@ class timer16 : private interrupt::handler
 		int8_t setAlias(t_alias);
 		
 		int8_t initialize(t_mode, t_interrupt, uint16_t=0x0000);
-		int8_t initialize(t_mode, t_channel, bool);
+		int8_t initialize(t_mode, t_channel, bool, bool);
 		
 		int8_t setPrescaler(uint16_t);
 		
@@ -103,7 +103,7 @@ class timer16 : private interrupt::handler
 		void setRegistersT5();
 		
 		// Modes.
-		int8_t setMode(t_mode);
+		int8_t setMode(t_mode, bool);
 
 		void setMode2Normal();				// Functions for NORMAL or CTC.
 		void setMode2Ctc();	
@@ -112,10 +112,10 @@ class timer16 : private interrupt::handler
 		void setMode2FastPwm();				// Functions for PWM.
 		void setMode2PhaseCorrectPwm();	
 		void setMode2FrequencyCorrectPwm();
-		int8_t setPwmChannel(t_channel, bool);
+		int8_t setPwmChannel(t_channel, bool, uint16_t, bool);
 		
 		// Static self.
-		static timer16 * _t16[5];
+		static timer16 * _t16[17];
 		
 		// Friend void.	
 		friend void TIMER1_OVF_vect(void);

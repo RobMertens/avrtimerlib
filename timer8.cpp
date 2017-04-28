@@ -25,9 +25,9 @@ timer8::timer8(t_alias alias)
 {
 	setAlias(alias);
 	
-	_overflowCount  = 0;
-	_compareCount   = 0;
-	_nonResetCount  = 0;	
+	_top = 0;
+	_interruptflagCount = 0;
+	_nonResetCount = 0;	
 }
 
 /*******************************************************************************
@@ -42,9 +42,9 @@ timer8::timer8()
 {
 	_alias = t_alias::NONE;
 	
-	_overflowCount  = 0;
-	_compareCount   = 0;
-	_nonResetCount  = 0;	
+	_top = 0;
+	_interruptflagCount = 0;
+	_nonResetCount = 0;	
 }
 
 /*******************************************************************************
@@ -66,9 +66,9 @@ timer8::timer8(volatile uint8_t * tccrxa, volatile uint8_t * tccrxb, volatile ui
 	
 	_alias = t_alias::TX;
 	
-	_overflowCount  = 0;
-	_compareCount   = 0;
-	_nonResetCount  = 0;
+	_top = 0;
+	_interruptflagCount = 0;
+	_nonResetCount = 0;
 	
 	_t8[6] = this;							// Instance of itself for ISR.
 }
@@ -88,10 +88,12 @@ int8_t timer8::setAlias(t_alias alias)
 	{
 		case t_alias::T0 :
 			setRegistersT0();
+			_t8[0] = this;
 			break;
 		
 		case t_alias::T2 :
 			setRegistersT2();
+			_t8[1] = this;
 			break;
 		
 		case t_alias::NONE :
@@ -282,8 +284,16 @@ int8_t timer8::setInterruptMode(t_interrupt interrupt, uint8_t compare)
 	//RESET VARS.
 	_interrupt = t_interrupt::NONE;
 	*_timskx = 0x00;
+	_t16 = {};
 	setCompareValueA(0x00);
 	setCompareValueB(0x00);
+	
+	//CHECK ALIAS.
+	if(_alias!=t_alias::T0 and _alias!=t_alias::T2 and _alias!=t_alias::TX)
+	{
+		ret = -1;
+		return ret;
+	}
 	
 	//INTERRUPT MODE.
 	switch(interrupt)
@@ -294,26 +304,21 @@ int8_t timer8::setInterruptMode(t_interrupt interrupt, uint8_t compare)
 	
 		case t_interrupt::OVF : 
 			*_timskx = 0x01;
-			
-			if(_alias==t_alias::T0)_t8[0] = this;
-			else{_t8[1] = this;}
+			if(_alias==t_alias::T0)_t8[0]=this;
+			else{_t8[1]=this;}
 			break;
 	
 		case t_interrupt::COMPA :
 			*_timskx = 0x02;
-			
-			if(_alias==t_alias::T0)_t8[2] = this;
-			else{_t8[3] = this;}
-			
+			if(_alias==t_alias::T0)_t8[2]=this;
+			else{_t8[3]=this;}
 			setCompareValueA(compare);
 			break;
 	
 		case t_interrupt::COMPB :
 			*_timskx = 0x04;
-			
-			if(_alias==t_alias::T0)_t8[4] = this;
-			else{_t8[5] = this;}
-			
+			if(_alias==t_alias::T0)_t8[4]=this;
+			else{_t8[5]=this;}
 			setCompareValueB(compare);
 			break;
 		
@@ -511,7 +516,7 @@ void timer8::setCompareValueB(uint8_t compare)
 /*******************************************************************************
  * 
  ******************************************************************************/
-int8_t timer8::setDutyCycleA(double dutyCycle)
+int8_t timer8::setDutyCycleA(float dutyCycle)
 {
 	int8_t ret = 0;
 	uint8_t compare = 0;
@@ -536,7 +541,7 @@ int8_t timer8::setDutyCycleA(double dutyCycle)
 /*******************************************************************************
  * 
  ******************************************************************************/
-int8_t timer8::setDutyCycleB(double dutyCycle)
+int8_t timer8::setDutyCycleB(float dutyCycle)
 {
 	int8_t ret = 0;
 	uint8_t compare = 0;
@@ -561,19 +566,10 @@ int8_t timer8::setDutyCycleB(double dutyCycle)
 /*******************************************************************************
  * 
  ******************************************************************************/
-int8_t timer8::setDutyCycleAB(double dutyCycleA, double dutyCycleB)
-{
-	//TODO::
-	
-	return -1;
-}
-
-/*******************************************************************************
- * 
- ******************************************************************************/
 void timer8::set(uint8_t value)
 {
 	*_tcntx = value;
+	_nonResetCount = 0;
 }
 
 /*******************************************************************************
@@ -589,9 +585,9 @@ void timer8::reset()
  ******************************************************************************/
 void timer8::hardReset()
 {
+	if(_interrupt!=t_interrupt::NONE)setInterrupt(t_interrupt::NONE);
+	if(_channel!=t_channel::NONE)setPwmChannel(t_channel::NONE);
 	setMode(t_mode::NORMAL);
-	setInterruptMode(t_interrupt::NONE, 0x00);
-	setPrescaler(0);
 	reset();
 }
 
@@ -614,6 +610,14 @@ uint8_t timer8::getTime()
 }
 
 /*******************************************************************************
+ * 
+ ******************************************************************************/
+uint32_t timer16::interruptFlagCount()
+{
+	return _interruptFlagCount;
+}
+
+/*******************************************************************************
  * Method for obtaining the total summized count since the last reset. Thus
  * overflows are accounted.
  * 
@@ -621,9 +625,11 @@ uint8_t timer8::getTime()
  * 
  * @return: _nonResetCount The count value since last reset.
  ******************************************************************************/
-uint32_t timer8::getNonResetCount()
+uint32_t timer16::getNonResetCount()
 {
-	//TODO::calculations.
+	uint16_t count = getCount();
+	
+	_nonResetCount = (_interruptFlagCount*_top) | ((0x0000 << 8) | count);
 	
 	return _nonResetCount;
 }
@@ -681,14 +687,7 @@ t_channel timer8::getPwmChannel()
  ******************************************************************************/
 void timer8::interruptServiceRoutine(void)
 {
-	if(_interrupt==t_interrupt::OVF)
-	{
-		_overflowCount++;
-	}
-	else if(_interrupt==t_interrupt::COMPA or _interrupt==t_interrupt::COMPB)
-	{
-		_compareCount++;
-	}
+	_interruptflagCount++;
 }
 
 /*******************************************************************************
@@ -718,7 +717,7 @@ void timer8::clear(void)
 /*******************************************************************************
  * Global forward declaration.
  ******************************************************************************/
-timer8 * timer8::_t8[6] = {};
+timer8 * timer8::_t8[7] = {};
 
 /*******************************************************************************
  * __vector_x -> ISR().
@@ -733,8 +732,10 @@ ISR(TIMER ## t ## _ ## vect ## _vect)						\
 	if(timer8::_t8[n])timer8::_t8[n] -> interruptServiceRoutine();		\
 }
 
-#if defined(TIMER0_OVF_vect)
-//TIMER_ISR(0, OVF, 0)
+#ifndef(ARDUINO) && (ARDUINO >= 100)
+	#if defined(TIMER0_OVF_vect)
+	TIMER_ISR(0, OVF, 0)		//Used by arduino.
+	#endif
 #endif
 #if defined(TIMER2_OVF_vect)
 TIMER_ISR(2, OVF, 1)
