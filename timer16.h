@@ -56,14 +56,13 @@ class timer16 : private interrupt::handler
 		
 		int8_t setPrescaler(uint16_t);
 		
-		int8_t setDutyCycleA(double);
-		int8_t setDutyCycleB(double);
-		int8_t setDutyCycleAB(double, double);
+		int8_t setDutyCycleA(float);
+		int8_t setDutyCycleB(float);
+		int8_t setDutyCycleC(float);
 		
 		uint16_t getCount();
+		uint32_t getinterruptFlagCount();
 		uint32_t getNonResetCount();
-		uint32_t getOverflowCount();
-		uint32_t getCompareCount();
 
 		t_alias getAlias();
 		t_mode getMode();
@@ -92,9 +91,9 @@ class timer16 : private interrupt::handler
 		volatile uint8_t * _ocrxcl;
 		volatile uint8_t * _ocrxch;
 		
-		// Overflow.		
-		uint32_t _overflowCount;
-		uint32_t _compareCount;
+		// Overflow.
+		uint16_t _top;		
+		uint32_t _interruptFlagCount;
 		uint32_t _nonResetCount;
 		
 		// ALIAS.
@@ -116,7 +115,7 @@ class timer16 : private interrupt::handler
 		int8_t setPwmChannel(t_channel, bool);
 		
 		// Static self.
-		static timer16 * _t16[16];
+		static timer16 * _t16[5];
 		
 		// Friend void.	
 		friend void TIMER1_OVF_vect(void);

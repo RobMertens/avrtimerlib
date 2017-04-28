@@ -2,12 +2,15 @@
 #define _T_SETTINGS_H_
 
 /*******************************************************************************
- * Available timer modes:
+ * Available timers on ATMEGA2560.
  * 
- * NONE 	: Non-operating mode.
- * NORMAL 	: Normal mode.
- * CTC		: Clear on Compare mode.
- * PWM		: Phase Width Modulation mode.
+ * T0 (8-bit),
+ * T1 (16-bit),
+ * T2 (8-bit),
+ * T3 (16-bit),
+ * T4 (16-bit),
+ * T5 (16-bit),
+ * TX (for non-atmega2560 timers).
  ******************************************************************************/
 enum class t_alias : int8_t
 {

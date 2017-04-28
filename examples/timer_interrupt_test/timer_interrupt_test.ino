@@ -24,38 +24,63 @@
 #include <timer16.h>
 
 //TIMER2.
+timer8	t0(t_alias::T0);
 timer16 t1(t_alias::T1);
-timer8  t2(t_alias::T2);
+timer8	t2(t_alias::T2);
+timer16 t3(t_alias::T3);
 timer16 t4(t_alias::T4);
+timer16 t5(t_alias::T5);
 
 //INIT.
 void setup()
 {
 	//SERIAL.
 	Serial.begin(9600);
-
+	
+	//TIMER0 SETTINGS.
+	t0.initialize(t_mode::CTC, t_interrupt::COMPA, 100);	// TIMER0_OVF_vect not available (used by arduino).
+	t0.setPrescaler(1); 					// Available prescalers for T0: 1, 8, 64, 256, 1024.
+	t0.reset();
+	
 	//TIMER1 SETTINGS.	
 	t1.initialize(t_mode::NORMAL, t_interrupt::OVF);
-	t1.setPrescaler(64); 				// Available prescalers for T1: 1, 8, 64, 256, 1024.
+	t1.setPrescaler(1); 					// Available prescalers for T1: 1, 8, 64, 256, 1024.
 	t1.reset();
 	
 	//TIMER2 SETTINGS.	
 	t2.initialize(t_mode::NORMAL, t_interrupt::OVF);
-	t2.setPrescaler(1); 				// Available prescalers for T2: 1, 8, 32, 64.
+	t2.setPrescaler(32); 					// Available prescalers for T2: 1, 8, 32, 64.
 	t2.reset();
-  
+	
+	//TIMER3 SETTINGS.  
+	t3.initialize(t_mode::CTC, t_interrupt::COMPB, 256);
+	t3.setPrescaler(64);         				// Available prescalers for T3: 1, 8, 64, 256, 1024.
+	t3.reset();
+	
 	//TIMER4 SETTINGS.  
-	t4.initialize(t_mode::CTC, t_interrupt::COMPB, 256);
-	t4.setPrescaler(64);         // Available prescalers for T1: 1, 8, 64, 256, 1024.
+	t4.initialize(t_mode::CTC, t_interrupt::COMPC, 50000);
+	t4.setPrescaler(256);         				// Available prescalers for T4: 1, 8, 64, 256, 1024.
 	t4.reset();
+	
+	//TIMER5 SETTINGS.  
+	t5.initialize(t_mode::NORMAL, t_interrupt::NONE);
+	t5.setPrescaler(1024);			        	// Available prescalers for T5: 1, 8, 64, 256, 1024.
+	t5.reset();
 }
 
 //MAIN PROGRAM.
 void loop()
 {
-	Serial.print(t1.getOverflowCount());
-	Serial.print("\t");
-	Serial.print(t2.getOverflowCount());
-	Serial.print("\t");
-	Serial.println(t4.getCompareCount());
+	Serial.print("T0::");
+	Serial.print(t0.getinterruptFlagCount());
+	Serial.print("\tT1::");
+	Serial.print(t1.getinterruptFlagCount());
+	Serial.print("\tT2::");
+	Serial.print(t2.getinterruptFlagCount());
+	Serial.print("\tT3::");
+	Serial.print(t3.getinterruptFlagCount());
+	Serial.print("\tT4::");
+	Serial.print(t4.getinterruptFlagCount());
+	Serial.print("\tT5::");
+	Serial.println(t5.getinterruptFlagCount());
 }
