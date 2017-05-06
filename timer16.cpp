@@ -25,9 +25,7 @@ timer16::timer16(t_alias alias)
 {
 	setAlias(alias);
 	
-	_top = 0;
-	_interruptflagCount = 0;
-	_nonResetCount = 0;
+	_overflows = 0;	
 }
 
 /*******************************************************************************
@@ -42,9 +40,7 @@ timer16::timer16()
 {
 	_alias = t_alias::NONE;
 	
-	_top = 0;
-	_interruptflagCount = 0;
-	_nonResetCount = 0;
+	_overflows = 0;	
 }
 
 /*******************************************************************************
@@ -70,9 +66,7 @@ timer16::timer16(volatile uint8_t * tccrxa, volatile uint8_t * tccrxb, volatile 
 	_alias = t_alias::TX;
 	_t16[16] = this;						// Instance of itself for ISR.
 	
-	_top = 0;
-	_interruptflagCount = 0;
-	_nonResetCount = 0;
+	_overflows = 0;	
 }
 
 /*******************************************************************************
@@ -197,20 +191,20 @@ void timer16::setRegistersT5()
  * @param: interrupt The interrupt mode, default is NONE.
  * @param: compare The compare value.
  ******************************************************************************/
-int8_t timer16::initialize(t_mode mode, t_interrupt interrupt, uint16_t compare)
+int8_t timer16::initialize(t_mode mode, t_interrupt interrupt)
 {
 	int8_t ret = 0;
 	
 	//t_mode
-	if(mode==t_mode::NORMAL or mode==t_mode::CTC)ret = setMode(mode, FALSE);
+	if(mode==t_mode::NORMAL or mode==t_mode::CTC)ret = setMode(mode);
 	if(ret==-1)return ret;
 	
 	//t_channel.
-	ret = setPwmChannel(t_channel::NONE, FALSE, 0xFFFF, FALSE);
+	ret = setPwmChannel(t_channel::NONE, t_inverted::NONE);
 	if(ret==-1)return ret;
 	
 	//t_interrupt.
-	ret = setInterruptMode(interrupt, compare);
+	ret = setInterruptMode(interrupt);
 	if(ret==-1)return ret;
 	
 	return ret;
@@ -224,20 +218,20 @@ int8_t timer16::initialize(t_mode mode, t_interrupt interrupt, uint16_t compare)
  * @param: interrupt The interrupt mode, default is NONE.
  * @param: inverted TODO
  ******************************************************************************/
-int8_t timer16::initialize(t_mode mode, t_channel channel, bool compareAsTop, bool inverted)
+int8_t timer16::initialize(t_mode mode, t_channel channel, t_inverted inverted)
 {
 	int8_t ret = 0;
 	
 	//t_mode
-	if(mode==t_mode::PWM_F or mode==t_mode::PWM_PC)ret = setMode(mode, compareAsTop);
+	if(mode==t_mode::PWM_F or mode==t_mode::PWM_PC)ret = setMode(mode);
 	if(ret==-1)return ret;
 	
 	//t_interrupt.
-	ret = setInterruptMode(t_interrupt::NONE, 0x0000);
+	ret = setInterruptMode(t_interrupt::NONE);
 	if(ret==-1)return ret;
 	
 	//t_channel.
-	ret = setPwmChannel(channel, compareAsTop, compare, inverted);
+	ret = setPwmChannel(channel, inverted);
 	return ret;
 }
 
@@ -246,7 +240,7 @@ int8_t timer16::initialize(t_mode mode, t_channel channel, bool compareAsTop, bo
  *
  * @param: mode The timer operation mode.
  ******************************************************************************/
-int8_t timer16::setMode(t_mode mode, bool compareAsTop)
+int8_t timer16::setMode(t_mode mode)
 {
 	int8_t ret = 0;
 	
@@ -266,15 +260,15 @@ int8_t timer16::setMode(t_mode mode, bool compareAsTop)
 			break;
 		
 		case t_mode::PWM_F :
-			setMode2FastPwm(bool compareAsTop);
+			setMode2FastPwm();
 			break;
 	
 		case t_mode::PWM_PC :
-			setMode2PhaseCorrectPwm(bool compareAsTop);
+			setMode2PhaseCorrectPwm();
 			break;
 		
 		case t_mode::PWM_FC :
-			setMode2FrequencyCorrectPwm(bool compareAsTop);
+			setMode2FrequencyCorrectPwm();
 			break;
 		
 		case t_mode::NONE :
@@ -330,18 +324,14 @@ void timer16::setMode2Ctc()
  *
  * @param: interrupt The timer interrupt mode.
  ******************************************************************************/
-int8_t timer16::setInterruptMode(t_interrupt interrupt, uint16_t compare)
+int8_t timer16::setInterruptMode(t_interrupt interrupt)
 {
 	int8_t ret = 0;
 	
 	//RESET VARS.
 	_interrupt = t_interrupt::NONE;
 	*_timskx = 0x00;
-	_t16 = {};
-	setCompareValueA(0x0000);
-	setCompareValueB(0x0000);
-	setCompareValueC(0x0000);
-	_top = 0xFFFF;
+	*_t16[17] = {};
 	
 	//CHECK ALIAS.	
 	if(_alias!=t_alias::T1 and _alias!=t_alias::T3 and _alias!=t_alias::T4 and _alias!=t_alias::T5 and _alias!=t_alias::TX)
@@ -371,8 +361,6 @@ int8_t timer16::setInterruptMode(t_interrupt interrupt, uint16_t compare)
 			else if(_alias==t_alias::T3)_t16[5]=this;
 			else if(_alias==t_alias::T4)_t16[6]=this;
 			else{_t16[7]=this;}
-			setCompareValueA(compare);
-			if(_mode==t_mode::CTC)_top=compare;
 			break;
 	
 		case t_interrupt::COMPB :
@@ -381,8 +369,6 @@ int8_t timer16::setInterruptMode(t_interrupt interrupt, uint16_t compare)
 			else if(_alias==t_alias::T3)_t16[9]=this;
 			else if(_alias==t_alias::T4)_t16[10]=this;
 			else{_t16[11]=this;}
-			setCompareValueB(compare);
-			if(_mode==t_mode::CTC)_top=compare;
 			break;
 		
 		case t_interrupt::COMPC :
@@ -391,8 +377,6 @@ int8_t timer16::setInterruptMode(t_interrupt interrupt, uint16_t compare)
 			else if(_alias==t_alias::T3)_t16[13]=this;
 			else if(_alias==t_alias::T4)_t16[14]=this;
 			else{_t16[15]=this;}
-			setCompareValueC(compare);
-			if(_mode==t_mode::CTC)_top=compare;
 			break;
 		
 		default :
@@ -408,7 +392,7 @@ int8_t timer16::setInterruptMode(t_interrupt interrupt, uint16_t compare)
 /*******************************************************************************
  * Private method for setting the timer mode 2 fast PWM.
  ******************************************************************************/
-void timer16::setMode2FastPwm(bool compareAsTop)
+void timer16::setMode2FastPwm()
 {
 	//Fast PWM.
 	*_tccrxa &= 0x0C;					// WGMx0  = 1;
@@ -416,8 +400,8 @@ void timer16::setMode2FastPwm(bool compareAsTop)
 	*_tccrxa |=  (1 << 1);					// COMxB0 = 0;
 								// COMxB1 = 0;
 								// COMxA0 = 0;
-	*_tccrxb &= 0xF7;					// COMxA1 = 0;
-	if(compareAsTop)*_tccrxb |= (1 << 3); 			// WGMx2  = 1;
+	*_tccrxb &= 0xF7;					// COMxA1 = 0; TODO::check 0xF7
+	//*_tccrxb |= (1 << 3);		 				// WGMx2  = 1;
 	
 	//Set var.
 	_mode = t_mode::PWM_F;
@@ -426,7 +410,7 @@ void timer16::setMode2FastPwm(bool compareAsTop)
 /*******************************************************************************
  * Private method for setting the timer mode 2 phase correct PWM.
  ******************************************************************************/
-void timer16::setMode2PhaseCorrectPwm(bool compareAsTop)
+void timer16::setMode2PhaseCorrectPwm()
 {
 	//Phase Correct PWM.
 	*_tccrxa &= 0x0C;					// WGMx0  = 1;
@@ -434,8 +418,8 @@ void timer16::setMode2PhaseCorrectPwm(bool compareAsTop)
 								// COMxB0 = 0;
 								// COMxB1 = 0;
 								// COMxA0 = 0;
-	*_tccrxb &= 0xF7;					// COMxA1 = 0;
-	if(compareAsTop)*_tccrxb |= (1 << 3); 			// WGMx2  = 1;
+	*_tccrxb &= 0xF7;					// COMxA1 = 0; TODO::check 0xF7
+	//*_tccrxb |= (1 << 3);			 			// WGMx2  = 1;
 	
 	//Set var.
 	_mode = t_mode::PWM_PC;
@@ -445,7 +429,7 @@ void timer16::setMode2PhaseCorrectPwm(bool compareAsTop)
  * Private method for setting the timer mode 2 phase correct PWM.
  * TODO::
  ******************************************************************************/
-void timer16::setMode2FrequencyCorrectPwm(bool compareAsTop)
+void timer16::setMode2FrequencyCorrectPwm()
 {
 	//Phase Correct PWM.
 	*_tccrxa &= 0x0C;					// WGMx0  = 1;
@@ -453,8 +437,8 @@ void timer16::setMode2FrequencyCorrectPwm(bool compareAsTop)
 								// COMxB0 = 0;
 								// COMxB1 = 0;
 								// COMxA0 = 0;
-	*_tccrxb &= 0xF7;					// COMxA1 = 0;
-	if(compareAsTop)*_tccrxb |= (1 << 3); 			// WGMx2  = 1;
+	*_tccrxb &= 0xF7;					// COMxA1 = 0; TODO::check 0xF7
+	//*_tccrxb |= (1 << 3); 				// WGMx2  = 1;
 	
 	//Set var.
 	_mode = t_mode::PWM_FC;
@@ -462,20 +446,21 @@ void timer16::setMode2FrequencyCorrectPwm(bool compareAsTop)
 
 /*******************************************************************************
  * Method for setting the pwm channel.
- *
+ * 
+ * TODO::PWM w/ specified top value.
+ * 
  * @param: channel The pwm channel.
- * @param: compareAsTop Do we want a specific value as TOP ? TRUE : FALSE
- * @param: compare The TOP OCRxA compare value.
  * @param: inverted Do we want inverted PWM ? TRUE : FALSE
  ******************************************************************************/
-int8_t timer16::setPwmChannel(t_channel channel, bool compareAsTop, uint16_t compare, bool inverted)
+int8_t timer16::setPwmChannel(t_channel channel, t_inverted inverted)
 {
 	int8_t ret = 0;
 	
 	//RESET VARS.
 	_channel = t_channel::NONE;
+	_inverted = t_inverted::NONE;
 	*_tccrxa &= 0x0F;
-	_top = 0xFFFF;
+	*_tccrxb &= 0xFB;
 	
 	//PWM channel.
 	switch(channel)
@@ -485,42 +470,56 @@ int8_t timer16::setPwmChannel(t_channel channel, bool compareAsTop, uint16_t com
 			break;
 	
 		case t_channel::A : 
-			if(!inverted)*_tccrxa |= 0x80;
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x80;
 			else{*_tccrxa |= 0xC0;}
-			if(compareAsTop)_top=compare;
 			break;
 	
 		case t_channel::B :
-			if(!inverted)*_tccrxa |= 0x20;
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x20;
 			else{*_tccrxa |= 0x30;}
 			break;
 		
+		case t_channel::B_TOP : //TODO::check tccrxa
+			*_tccrxb |= 0x04;
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0xA0;
+			else{*_tccrxa |= 0xF0;}
+			break;
+		
 		case t_channel::C :
-			if(!inverted)*_tccrxa |= 0x08;
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x08;
 			else{*_tccrxa |= 0x0C;}
 			break;
 		
-		case t_channel::AB :
-			if(!inverted)*_tccrxa |= 0xA0;
+		case t_channel::C_TOP : //TODO::check tccrxa
+			*_tccrxb |= 0x04;
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0xA0;
 			else{*_tccrxa |= 0xF0;}
-			if(compareAsTop)_top=compare;
 			break;
 		
-		case t_channel::BC :
-			if(!inverted)*_tccrxa |= 0x28;
-			else{*_tccrxa |= 0x3C;}
+		case t_channel::AB :
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0xA0;
+			else{*_tccrxa |= 0xF0;}
 			break;
 		
 		case t_channel::AC :
-			if(!inverted)*_tccrxa |= 0x88;
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x88;
 			else{*_tccrxa |= 0xCC;}
-			if(compareAsTop)_top=compare;
+			break;
+		
+		case t_channel::BC :
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x28;
+			else{*_tccrxa |= 0x3C;}
+			break;
+		
+		case t_channel::BC_TOP : //TODO::check tccrxa
+			*_tccrxb |= 0x04;
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x28;
+			else{*_tccrxa |= 0x3C;}
 			break;
 		
 		case t_channel::ABC :
-			if(!inverted)*_tccrxa |= 0xA8;
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0xA8;
 			else{*_tccrxa |= 0xFC;}
-			if(compareAsTop)_top=compare;
 			break;
 		
 		default :
@@ -708,7 +707,6 @@ void timer16::set(uint16_t value)
 {
 	*_tcntxh = (uint8_t)((value >> 8) & 0xFF);
 	*_tcntxl = (uint8_t)(value & 0xFF);
-	_nonResetCount = 0;
 }
 
 /*******************************************************************************
@@ -724,8 +722,8 @@ void timer16::reset()
  ******************************************************************************/
 void timer16::hardReset()
 {
-	if(_interrupt!=t_interrupt::NONE)setInterrupt(t_interrupt::NONE);
-	if(_channel!=t_channel::NONE)setPwmChannel(t_channel::NONE);
+	if(_interrupt!=t_interrupt::NONE)setInterruptMode(t_interrupt::NONE);
+	if(_channel!=t_channel::NONE)setPwmChannel(t_channel::NONE, t_inverted::NONE);
 	setMode(t_mode::NORMAL);
 	reset();
 }
@@ -745,9 +743,9 @@ uint16_t timer16::getCount()
 /*******************************************************************************
  * 
  ******************************************************************************/
-uint32_t timer16::interruptFlagCount()
+uint32_t timer16::getOverflows()
 {
-	return _interruptFlagCount;
+	return _overflows;
 }
 
 /*******************************************************************************
@@ -760,11 +758,15 @@ uint32_t timer16::interruptFlagCount()
  ******************************************************************************/
 uint32_t timer16::getNonResetCount()
 {
-	uint16_t count = getCount();
+	uint8_t count = getCount();
+	uint16_t top = 0xFFFE;
+	uint32_t nonResetCount = 0x00000000;
 	
-	_nonResetCount = (_interruptFlagCount*_top) | ((0x0000 << 8) | count);
+	//TODO::set the top value according to the timer mode.	
+	//if(_channel==t_channel::B_TOP or _channel==t_channel::C_TOP or _channel==t_channel::BC_TOP)
+	nonResetCount = (_overflows*(uint32_t)top) | ((0x0000 << 8) | count);
 	
-	return _nonResetCount;
+	return nonResetCount;
 }
 
 /*******************************************************************************
@@ -794,9 +796,17 @@ t_interrupt timer16::getInterruptMode()
 /*******************************************************************************
  * 
  ******************************************************************************/
-t_channel timer16::getPwmChannel()
+t_channel timer16::getChannel()
 {
 	return _channel;
+}
+
+/*******************************************************************************
+ * 
+ ******************************************************************************/
+t_inverted timer16::getInverted()
+{
+	return _inverted;
 }
 
 /*******************************************************************************
@@ -804,7 +814,7 @@ t_channel timer16::getPwmChannel()
  ******************************************************************************/
 void timer16::interruptServiceRoutine(void)
 {
-	_interruptFlagCount++;
+	_overflows++;
 }
 
 /*******************************************************************************

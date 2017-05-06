@@ -38,7 +38,8 @@ void setup()
 	Serial.begin(9600);
 	
 	//TIMER0 SETTINGS.
-	t0.initialize(t_mode::CTC, t_interrupt::COMPA, 100);	// TIMER0_OVF_vect not available (used by arduino).
+	t0.initialize(t_mode::CTC, t_interrupt::COMPA);		// TIMER0_OVF_vect not available (used by arduino).
+	t4.setCompareValueA(200);
 	t0.setPrescaler(1); 					// Available prescalers for T0: 1, 8, 64, 256, 1024.
 	t0.reset();
 	
@@ -53,12 +54,14 @@ void setup()
 	t2.reset();
 	
 	//TIMER3 SETTINGS.  
-	t3.initialize(t_mode::CTC, t_interrupt::COMPB, 256);
+	t3.initialize(t_mode::CTC, t_interrupt::COMPB);
+	t4.setCompareValueB(2000);
 	t3.setPrescaler(64);         				// Available prescalers for T3: 1, 8, 64, 256, 1024.
 	t3.reset();
 	
 	//TIMER4 SETTINGS.  
-	t4.initialize(t_mode::CTC, t_interrupt::COMPC, 50000);
+	t4.initialize(t_mode::CTC, t_interrupt::COMPC);
+	t4.setCompareValueC(50000);
 	t4.setPrescaler(256);         				// Available prescalers for T4: 1, 8, 64, 256, 1024.
 	t4.reset();
 	
@@ -72,15 +75,15 @@ void setup()
 void loop()
 {
 	Serial.print("T0::");
-	Serial.print(t0.getinterruptFlagCount());
+	Serial.print(t0.getOverflows());
 	Serial.print("\tT1::");
-	Serial.print(t1.getinterruptFlagCount());
+	Serial.print(t1.getOverflows());
 	Serial.print("\tT2::");
-	Serial.print(t2.getinterruptFlagCount());
+	Serial.print(t2.getOverflows());
 	Serial.print("\tT3::");
-	Serial.print(t3.getinterruptFlagCount());
+	Serial.print(t3.getOverflows());
 	Serial.print("\tT4::");
-	Serial.print(t4.getinterruptFlagCount());
+	Serial.print(t4.getOverflows());
 	Serial.print("\tT5::");
-	Serial.println(t5.getinterruptFlagCount());
+	Serial.println(t5.getOverflows());
 }

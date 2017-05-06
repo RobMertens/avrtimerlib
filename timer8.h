@@ -39,8 +39,8 @@ class timer8 : private interrupt::handler
 		//Getters ********************************************************************
 		int8_t setAlias(t_alias);
 		
-		int8_t initialize(t_mode, t_interrupt, uint8_t=0x00);
-		int8_t initialize(t_mode, t_channel, bool);
+		int8_t initialize(t_mode, t_interrupt);
+		int8_t initialize(t_mode, t_channel, t_inverted);
 		
 		int8_t setPrescaler(uint16_t);
 		
@@ -48,18 +48,14 @@ class timer8 : private interrupt::handler
 		int8_t setDutyCycleB(float);
 		
 		uint8_t getCount();
-		uint8_t getTime();
-
+		uint32_t getOverflows();
 		uint32_t getNonResetCount();
-		uint32_t getOverflowCount();
-		uint32_t getCompareCount();
 		
-		
-		
-		t_alias getAlias();
-		t_mode getMode();
-		t_interrupt getInterruptMode();	
-		t_channel getPwmChannel();
+		t_alias		getAlias();
+		t_mode		getMode();
+		t_interrupt	getInterruptMode();	
+		t_channel	getChannel();
+		t_inverted	getInverted();
 		
 	private:		
 		// Registers.
@@ -74,19 +70,13 @@ class timer8 : private interrupt::handler
 		t_alias _alias;
 		uint16_t _prescale;
 		
-		t_mode _mode;
-		t_interrupt _interrupt;
-		t_channel _channel;
-		bool _inverted;
+		t_mode		_mode;
+		t_interrupt	_interrupt;
+		t_channel	_channel;
+		t_inverted	_inverted;
 		
-		double _frequency;				//Ticks 2 Time
-		
-		// Overflow.
-		uint16_t _top;		
-		uint32_t _interruptFlagCount;
-		uint32_t _nonResetCount;
-		
-		uint32_t _time;
+		// Overflows.		
+		uint32_t _overflows;
 		
 		// ALIAS.
 		void setRegistersT0();
@@ -97,11 +87,11 @@ class timer8 : private interrupt::handler
 		// Functions for NORMAL or CTC.
 		void setMode2Normal();
 		void setMode2Ctc();	
-		int8_t setInterruptMode(t_interrupt, uint8_t);
+		int8_t setInterruptMode(t_interrupt);
 		// Functions for PWM.
 		void setMode2FastPwm();
 		void setMode2PhaseCorrectPwm();	
-		int8_t setPwmChannel(t_channel, bool);
+		int8_t setPwmChannel(t_channel, t_inverted);
 		
 		static timer8 * _t8[7];
 		

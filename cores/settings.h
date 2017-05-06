@@ -52,7 +52,7 @@ enum class t_interrupt : uint8_t
 	COMPA	= 2,
 	COMPB	= 3,
 	COMPC	= 4
-	//CAPT  = 5;
+	//CAPT  = 5,
 	//COMPAB	= 6
 };
 
@@ -64,11 +64,24 @@ enum class t_channel : uint8_t
 	NONE	= 0,
 	A	= 1,
 	B	= 2,
-	C	= 3,
-	AB	= 4,
-	BC	= 5,
-	AC	= 6,
-	ABC	= 7
+	B_TOP	= 3,
+	C	= 4,
+	C_TOP	= 5,
+	AB	= 6,
+	AC	= 7,
+	BC	= 8,
+	BC_TOP	= 9,
+	ABC	= 10
+};
+
+/*******************************************************************************
+ * PWM inverted.
+ ******************************************************************************/
+enum class t_inverted : uint8_t
+{
+	NONE	= 0,
+	NORMAL	= 1,
+	INV	= 2
 };
 
 #endif

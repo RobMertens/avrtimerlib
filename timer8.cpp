@@ -25,9 +25,7 @@ timer8::timer8(t_alias alias)
 {
 	setAlias(alias);
 	
-	_top = 0;
-	_interruptflagCount = 0;
-	_nonResetCount = 0;	
+	_overflows = 0;	
 }
 
 /*******************************************************************************
@@ -42,9 +40,7 @@ timer8::timer8()
 {
 	_alias = t_alias::NONE;
 	
-	_top = 0;
-	_interruptflagCount = 0;
-	_nonResetCount = 0;	
+	_overflows = 0;	
 }
 
 /*******************************************************************************
@@ -66,9 +62,7 @@ timer8::timer8(volatile uint8_t * tccrxa, volatile uint8_t * tccrxb, volatile ui
 	
 	_alias = t_alias::TX;
 	
-	_top = 0;
-	_interruptflagCount = 0;
-	_nonResetCount = 0;
+	_overflows = 0;	
 	
 	_t8[6] = this;							// Instance of itself for ISR.
 }
@@ -146,20 +140,21 @@ void timer8::setRegistersT2()
  * @param: interrupt The interrupt mode, default is NONE.
  * @param: compare TODO
  ******************************************************************************/
-int8_t timer8::initialize(t_mode mode, t_interrupt interrupt, uint8_t compare)
+int8_t timer8::initialize(t_mode mode, t_interrupt interrupt)
 {
 	int8_t ret = 0;
 	
 	//t_mode
 	if(mode==t_mode::NORMAL or mode==t_mode::CTC)ret = setMode(mode);
+	else{ret=-1;}
 	if(ret==-1)return ret;
 	
 	//t_channel.
-	ret = setPwmChannel(t_channel::NONE, false);
+	ret = setPwmChannel(t_channel::NONE, t_inverted::NONE);
 	if(ret==-1)return ret;
 	
 	//t_interrupt.
-	ret = setInterruptMode(interrupt, compare);
+	ret = setInterruptMode(interrupt);
 	if(ret==-1)return ret;
 
 	return ret;
@@ -173,16 +168,17 @@ int8_t timer8::initialize(t_mode mode, t_interrupt interrupt, uint8_t compare)
  * @param: interrupt The interrupt mode, default is NONE.
  * @param: inverted TODO
  ******************************************************************************/
-int8_t timer8::initialize(t_mode mode, t_channel channel, bool inverted)
+int8_t timer8::initialize(t_mode mode, t_channel channel, t_inverted inverted)
 {
 	int8_t ret = 0;
 	
 	//t_mode
 	if(mode==t_mode::PWM_F or mode==t_mode::PWM_PC)ret = setMode(mode);
+	else{ret=-1;}
 	if(ret==-1)return ret;
 	
 	//t_interrupt.
-	ret = setInterruptMode(t_interrupt::NONE, 0x00);
+	ret = setInterruptMode(t_interrupt::NONE);
 	if(ret==-1)return ret;
 	
 	//t_channel.
@@ -277,16 +273,14 @@ void timer8::setMode2Ctc()
  *
  * @param: interrupt The timer interrupt mode.
  ******************************************************************************/
-int8_t timer8::setInterruptMode(t_interrupt interrupt, uint8_t compare)
+int8_t timer8::setInterruptMode(t_interrupt interrupt)
 {
 	int8_t ret = 0;
 	
 	//RESET VARS.
 	_interrupt = t_interrupt::NONE;
 	*_timskx = 0x00;
-	_t16 = {};
-	setCompareValueA(0x00);
-	setCompareValueB(0x00);
+	_t8[7] = {};
 	
 	//CHECK ALIAS.
 	if(_alias!=t_alias::T0 and _alias!=t_alias::T2 and _alias!=t_alias::TX)
@@ -312,14 +306,12 @@ int8_t timer8::setInterruptMode(t_interrupt interrupt, uint8_t compare)
 			*_timskx = 0x02;
 			if(_alias==t_alias::T0)_t8[2]=this;
 			else{_t8[3]=this;}
-			setCompareValueA(compare);
 			break;
 	
 		case t_interrupt::COMPB :
 			*_timskx = 0x04;
 			if(_alias==t_alias::T0)_t8[4]=this;
 			else{_t8[5]=this;}
-			setCompareValueB(compare);
 			break;
 		
 		case t_interrupt::COMPC :
@@ -376,38 +368,53 @@ void timer8::setMode2PhaseCorrectPwm()
  *
  * @param: interrupt The timer interrupt mode.
  ******************************************************************************/
-int8_t timer8::setPwmChannel(t_channel channel, bool inverted)
+int8_t timer8::setPwmChannel(t_channel channel, t_inverted inverted)
 {
 	int8_t ret = 0;
 	
 	_channel = t_channel::NONE;
 	*_tccrxa &= 0x0F;
+	*_tccrxb &= 0xFB;
 
 	//PWM channel.
 	switch(channel)
 	{
+		//No PWM channel.
 		case t_channel::NONE : 
 			//Nothing.
 			break;
-	
+		
+		//Channel A.
 		case t_channel::A : 
-			if(!inverted)*_tccrxa |= 0x80;
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x80;
 			else{*_tccrxa |= 0xC0;}
 			break;
-	
+		
+		//Channel B.
 		case t_channel::B :
-			if(!inverted)*_tccrxa |= 0x20;
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x20;
 			else{*_tccrxa |= 0x30;}
 			break;
-	
-		case t_channel::AB :
-			if(!inverted)*_tccrxa |= 0xA0;
+		
+		//Channel B w/ specified TOP-value.
+		case t_channel::B_TOP :
+			*_tccrxb |= 0x04;
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0xA0;
 			else{*_tccrxa |= 0xF0;}
 			break;
 		
+		//Channel A & B.
+		case t_channel::AB :
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0xA0;
+			else{*_tccrxa |= 0xF0;}
+			break;
+		
+		//Invalid options.
 		case t_channel::C :
-		case t_channel::BC :
+		case t_channel::C_TOP :
 		case t_channel::AC :
+		case t_channel::BC :
+		case t_channel::BC_TOP :
 		case t_channel::ABC :
 		default :
 			ret = -1;
@@ -569,7 +576,6 @@ int8_t timer8::setDutyCycleB(float dutyCycle)
 void timer8::set(uint8_t value)
 {
 	*_tcntx = value;
-	_nonResetCount = 0;
 }
 
 /*******************************************************************************
@@ -585,8 +591,8 @@ void timer8::reset()
  ******************************************************************************/
 void timer8::hardReset()
 {
-	if(_interrupt!=t_interrupt::NONE)setInterrupt(t_interrupt::NONE);
-	if(_channel!=t_channel::NONE)setPwmChannel(t_channel::NONE);
+	if(_interrupt!=t_interrupt::NONE)setInterruptMode(t_interrupt::NONE);
+	if(_channel!=t_channel::NONE)setPwmChannel(t_channel::NONE, t_inverted::NONE);
 	setMode(t_mode::NORMAL);
 	reset();
 }
@@ -600,24 +606,6 @@ uint8_t timer8::getCount()
 }
 
 /*******************************************************************************
- * 
- ******************************************************************************/
-uint8_t timer8::getTime()
-{
-	//TODO::calculations.
-	
-	return *_tcntx;
-}
-
-/*******************************************************************************
- * 
- ******************************************************************************/
-uint32_t timer16::interruptFlagCount()
-{
-	return _interruptFlagCount;
-}
-
-/*******************************************************************************
  * Method for obtaining the total summized count since the last reset. Thus
  * overflows are accounted.
  * 
@@ -625,29 +613,25 @@ uint32_t timer16::interruptFlagCount()
  * 
  * @return: _nonResetCount The count value since last reset.
  ******************************************************************************/
-uint32_t timer16::getNonResetCount()
+uint32_t timer8::getNonResetCount()
 {
-	uint16_t count = getCount();
+	uint8_t count = getCount();
+	uint8_t top = 0xFE;
+	uint32_t nonResetCount = 0x00000000;
 	
-	_nonResetCount = (_interruptFlagCount*_top) | ((0x0000 << 8) | count);
+	//TODO::set the top value according to the timer mode.	
+	//if(_channel==t_channel::B_TOP or _channel==t_channel::C_TOP or _channel==t_channel::BC_TOP)
+	nonResetCount = (_overflows*(uint32_t)top) | ((0x0000 << 8) | count);
 	
-	return _nonResetCount;
+	return nonResetCount;
 }
 
 /*******************************************************************************
  * 
  ******************************************************************************/
-uint32_t timer8::getOverflowCount()
+uint32_t timer8::getOverflows()
 {
-	return _overflowCount;
-}
-
-/*******************************************************************************
- * 
- ******************************************************************************/
-uint32_t timer8::getCompareCount()
-{
-	return _compareCount;
+	return _overflows;
 }
 
 /*******************************************************************************
@@ -677,9 +661,17 @@ t_interrupt timer8::getInterruptMode()
 /*******************************************************************************
  * 
  ******************************************************************************/
-t_channel timer8::getPwmChannel()
+t_channel timer8::getChannel()
 {
 	return _channel;
+}
+
+/*******************************************************************************
+ * 
+ ******************************************************************************/
+t_inverted timer8::getInverted()
+{
+	return _inverted;
 }
 
 /*******************************************************************************
@@ -687,7 +679,7 @@ t_channel timer8::getPwmChannel()
  ******************************************************************************/
 void timer8::interruptServiceRoutine(void)
 {
-	_interruptflagCount++;
+	_overflows++;
 }
 
 /*******************************************************************************
@@ -732,7 +724,7 @@ ISR(TIMER ## t ## _ ## vect ## _vect)						\
 	if(timer8::_t8[n])timer8::_t8[n] -> interruptServiceRoutine();		\
 }
 
-#ifndef(ARDUINO) && (ARDUINO >= 100)
+#if not defined(ARDUINO)
 	#if defined(TIMER0_OVF_vect)
 	TIMER_ISR(0, OVF, 0)		//Used by arduino.
 	#endif
