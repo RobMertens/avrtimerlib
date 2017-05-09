@@ -1,6 +1,8 @@
 #ifndef _T_SETTINGS_H_
 #define _T_SETTINGS_H_
 
+#include <stdint.h>
+
 /*******************************************************************************
  * Available timers on ATMEGA2560.
  * 
@@ -52,8 +54,7 @@ enum class t_interrupt : uint8_t
 	COMPA	= 2,
 	COMPB	= 3,
 	COMPC	= 4
-	//CAPT  = 5,
-	//COMPAB	= 6
+	//CAPT  = 5
 };
 
 /*******************************************************************************

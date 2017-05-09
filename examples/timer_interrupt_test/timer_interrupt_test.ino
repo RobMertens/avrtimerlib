@@ -20,8 +20,9 @@
  * @version:	1.1.1   
  ******************************************************************************/
 
-#include <timer8.h>
-#include <timer16.h>
+#include "settings.h"
+#include "timer8.h"
+#include "timer16.h"
 
 //TIMER2.
 timer8	t0(t_alias::T0);

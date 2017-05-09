@@ -1,26 +1,23 @@
 #ifndef _TIMER16_H_
 #define _TIMER16_H_
 
+#include <stdint.h>
 #include <avr/interrupt.h>
-#include <cores/interrupt.h>
-#include <cores/settings.h>
+#include "settings.h"
+#include "interrupt.h"
 
-// ATMEGA2560
 extern "C" void TIMER1_OVF_vect(void) __attribute__ ((signal));
 extern "C" void TIMER3_OVF_vect(void) __attribute__ ((signal));
 extern "C" void TIMER4_OVF_vect(void) __attribute__ ((signal));
 extern "C" void TIMER5_OVF_vect(void) __attribute__ ((signal));
-
 extern "C" void TIMER1_COMPA_vect(void) __attribute__ ((signal));
 extern "C" void TIMER3_COMPA_vect(void) __attribute__ ((signal));
 extern "C" void TIMER4_COMPA_vect(void) __attribute__ ((signal));
 extern "C" void TIMER5_COMPA_vect(void) __attribute__ ((signal));
-
 extern "C" void TIMER1_COMPB_vect(void) __attribute__ ((signal));
 extern "C" void TIMER3_COMPB_vect(void) __attribute__ ((signal));
 extern "C" void TIMER4_COMPB_vect(void) __attribute__ ((signal));
 extern "C" void TIMER5_COMPB_vect(void) __attribute__ ((signal));
-
 extern "C" void TIMER1_COMPC_vect(void) __attribute__ ((signal));
 extern "C" void TIMER3_COMPC_vect(void) __attribute__ ((signal));
 extern "C" void TIMER4_COMPC_vect(void) __attribute__ ((signal));

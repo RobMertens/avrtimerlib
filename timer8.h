@@ -1,19 +1,19 @@
 #ifndef _TIMER8_H_
 #define _TIMER8_H_
 
+#include <stdint.h>
 #include <avr/interrupt.h>
-#include <cores/interrupt.h>
-#include <cores/settings.h>
+#include "settings.h"
+#include "interrupt.h"
 
-// ATMEGA2560
 extern "C" void TIMER0_OVF_vect(void) __attribute__((signal));
 extern "C" void TIMER2_OVF_vect(void) __attribute__((signal));
-
 extern "C" void TIMER0_COMPA_vect(void) __attribute__((signal));
 extern "C" void TIMER2_COMPA_vect(void) __attribute__((signal));
-
 extern "C" void TIMER0_COMPB_vect(void) __attribute__((signal));
 extern "C" void TIMER2_COMPB_vect(void) __attribute__((signal));
+
+class interrupt;
 
 class timer8 : private interrupt::handler
 {

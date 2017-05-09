@@ -1,69 +1,91 @@
 #######################################
-# Syntax Coloring Map For PID Library
+# avr-timer-lib
+# keywords.txt
+#
+# Syntax coloring map.
+# 
+# @author: 	Rob Mertens
+# @date:	09/05/2017
+# @version:	1.1.1   
 #######################################
 
 #######################################
 # Datatypes (KEYWORD1)
 #######################################
 
-PID					KEYWORD1
-ESC					KEYWORD1
-MPU6050				KEYWORD1
-RX					KEYWORD1
-BAT					KEYWORD1
-LED					KEYWORD1
-TIMER				KEYWORD1
-INTERRUPT			KEYWORD1
-MATH				KEYWORD1
+t_alias				KEYWORD1
+t_mode				KEYWORD1
+t_interrupt			KEYWORD1
+t_channel			KEYWORD1
+t_inverted			KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
-setOutputLimits		KEYWORD2
-setGainValues		KEYWORD2
-setDirection		KEYWORD2
-calculate			KEYWORD2
-getMinOutputLimit	KEYWORD2
-getMaxOutputLimit	KEYWORD2
-getProportionalGain	KEYWORD2
-getIntegralGain		KEYWORD2
-getDifferentialGain	KEYWORD2
-GetDirection		KEYWORD2
-
-activate			KEYWORD2
-writeByte			KEYWORD2
-writeWord			KEYWORD2
-setScale			KEYWORD2
-getAddress			KEYWORD2
-readByte			KEYWORD2
-readWord			KEYWORD2
-readGyroscope		KEYWORD2
-readAccelero		KEYWORD2
-
-writePulse			KEYWORD2
-
-begin				KEYWORD2
-end					KEYWORD2
-timeOut				KEYWORD2
-setSpeed			KEYWORD2
-pullup				KEYWORD2
-scan				KEYWORD2
-write				KEYWORD2
-read				KEYWORD2
-available			KEYWORD2
-receive				KEYWORD2
+timer8				KEYWORD2
+timer16				KEYWORD2
+set				KEYWORD2
+reset				KEYWORD2
+hardReset			KEYWORD2
+setAlias			KEYWORD2
+initialize			KEYWORD2
+setPrescaler			KEYWORD2
+initialize			KEYWORD2
+setCompareValueA		KEYWORD2
+setCompareValueB		KEYWORD2
+setCompareValueC		KEYWORD2
+setDutyCycleA			KEYWORD2
+setDutyCycleB			KEYWORD2
+setDutyCycleC			KEYWORD2
+getCount			KEYWORD2
+getOverflows			KEYWORD2
+getNonResetCount		KEYWORD2
+getAlias			KEYWORD2
+getMode				KEYWORD2
+getInterruptMode		KEYWORD2
+getChannel			KEYWORD2
+getInverted			KEYWORD2
 
 #######################################
 # Objects and instances (KEYWORD3)
 #######################################
 
-vector				KEYWORD3
-quaternion			KEYWORD3
+interrupt			KEYWORD3
+handler				KEYWORD3
+timer8				KEYWORD3
+timer16				KEYWORD3
 
 #######################################
 # Constants (LITERAL1)
 #######################################
 
-DIRECT				LITERAL1
-REVERSE				LITERAL1
+NONE				LITERAL1
+T0				LITERAL1
+T1				LITERAL1
+T2				LITERAL1
+T3				LITERAL1
+T4				LITERAL1
+T5				LITERAL1
+TX				LITERAL1
+NORMAL				LITERAL1
+CTC				LITERAL1
+PWM_F				LITERAL1
+PWM_PC				LITERAL1
+PWM_FC				LITERAL1
+OVF				LITERAL1
+COMPA				LITERAL1
+COMPB				LITERAL1
+COMPC				LITERAL1
+A				LITERAL1
+B				LITERAL1
+B_TOP				LITERAL1
+C				LITERAL1
+C_TOP				LITERAL1
+AB				LITERAL1
+AC				LITERAL1
+BC				LITERAL1
+BC_TOP				LITERAL1
+ABC				LITERAL1
+NORMAL				LITERAL1
+INV				LITERAL1

@@ -12,9 +12,9 @@ class interrupt {
 
 				//Setters ********************************************************************
 				virtual void interruptServiceRoutine(void) = 0;
-				virtual void enable();
-				virtual void disable();
-				virtual void clear();
+				virtual void enable() = 0;
+				virtual void disable() = 0;
+				virtual void clear() = 0;
 
 				//Getters ********************************************************************
 			private:
