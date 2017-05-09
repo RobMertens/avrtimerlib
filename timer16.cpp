@@ -1,17 +1,17 @@
 /******************************************************************************
  * avr-timer-lib
- * TIMER8.CPP
+ * TIMER16.CPP
  *  
- * This file contains functions for 8bit avr-timers.
+ * This file contains functions for 16bit avr-timers.
  *
  * TODO::auto pin-map w/ alias function for different arduino's (UNO/MEGA/...).
  *
  * @author:	Rob Mertens
- * @version: 	1.0.1 
- * @date: 	17/04/2017
+ * @version: 	1.1.1 
+ * @date: 	20/04/2017
  ******************************************************************************/
 
-#include "timer8.h"
+#include "timer16.h"
 
 /*******************************************************************************
  * Constructor for a 16-bit timer, e.g.: timer0 on MEGA2560.
@@ -21,7 +21,7 @@
  * @param: tccr The timer control register.
  * @param: tcnt The timer count register.
  ******************************************************************************/
-timer8::timer8(t_alias alias)
+timer16::timer16(t_alias alias)
 {
 	setAlias(alias);
 	
@@ -36,7 +36,7 @@ timer8::timer8(t_alias alias)
  * @param: tccr The timer control register.
  * @param: tcnt The timer count register.
  ******************************************************************************/
-timer8::timer8()
+timer16::timer16()
 {
 	_alias = t_alias::NONE;
 	
@@ -44,27 +44,29 @@ timer8::timer8()
 }
 
 /*******************************************************************************
- * Constructor for a 8-bit timer, e.g.: timer0 on MEGA2560.
+ * Constructor for a 16-bit timer, e.g.: timer0 on MEGA2560.
  * 
  * TODO::auto pin-map w/ alias function.
  *
  * @param: tccr The timer control register.
  * @param: tcnt The timer count register.
  ******************************************************************************/
-timer8::timer8(volatile uint8_t * tccrxa, volatile uint8_t * tccrxb, volatile uint8_t * tcntx, volatile uint8_t * timskx, volatile uint8_t * ocrxa, volatile uint8_t * ocrxb)
+timer16::timer16(volatile uint8_t * tccrxa, volatile uint8_t * tccrxb, volatile uint8_t * tcntxh, volatile uint8_t * tcntxl, volatile uint8_t * timskx, volatile uint8_t * ocrxah, volatile uint8_t * ocrxal, volatile uint8_t * ocrxbh, volatile uint8_t * ocrxbl)
 {
 	_tccrxa = tccrxa;						// Timer Count Control Register.
 	_tccrxb = tccrxb;						// Timer Count Control Register.
-	_tcntx  = tcntx;						// Timer Count register.
+	_tcntxl = tcntxl;						// Timer Count register.
+	_tcntxh = tcntxh;
 	_timskx = timskx;						// Timer Interrupt Mask register.
-	_ocrxa  = ocrxa;
-	_ocrxb  = ocrxb;
+	_ocrxal = ocrxal;
+	_ocrxah = ocrxah;
+	_ocrxbl = ocrxbl;
+	_ocrxbh = ocrxbh;
 	
 	_alias = t_alias::TX;
+	_t16[16] = this;						// Instance of itself for ISR.
 	
 	_overflows = 0;	
-	
-	_t8[6] = this;							// Instance of itself for ISR.
 }
 
 /*******************************************************************************
@@ -72,29 +74,32 @@ timer8::timer8(volatile uint8_t * tccrxa, volatile uint8_t * tccrxb, volatile ui
  *
  * @param: alias The timer alias.
  ******************************************************************************/
-int8_t timer8::setAlias(t_alias alias)
+int8_t timer16::setAlias(t_alias alias)
 {
 	int8_t ret = 0;
-	
 	_alias = t_alias::NONE;
 	
 	switch(alias)
 	{
-		case t_alias::T0 :
-			setRegistersT0();
-			_t8[0] = this;
+		case t_alias::T1 :
+			setRegistersT1();
 			break;
 		
-		case t_alias::T2 :
-			setRegistersT2();
-			_t8[1] = this;
+		case t_alias::T3 :
+			setRegistersT3();
+			break;
+		
+		case t_alias::T4 :
+			setRegistersT4();
+			break;
+		
+		case t_alias::T5 :
+			setRegistersT5();
 			break;
 		
 		case t_alias::NONE :
-		case t_alias::T1 :
-		case t_alias::T3 :
-		case t_alias::T4 :
-		case t_alias::T5 :		
+		case t_alias::T0 :
+		case t_alias::T2 :		
 		case t_alias::TX :
 		default :
 			ret = -1;
@@ -107,29 +112,75 @@ int8_t timer8::setAlias(t_alias alias)
 }
 
 /*******************************************************************************
- * Method for setting the registers as T0 (atmega2560).
+ * Method for setting the registers as T1 (atmega2560).
  ******************************************************************************/
-void timer8::setRegistersT0()
+void timer16::setRegistersT1()
 {
-	_tccrxa = (volatile uint8_t *)0x44;
-	_tccrxb = (volatile uint8_t *)0x45;
-	_tcntx  = (volatile uint8_t *)0x46;
-	_timskx = (volatile uint8_t *)0x6E;
-	_ocrxa  = (volatile uint8_t *)0x47;
-	_ocrxb  = (volatile uint8_t *)0x48;
+	_tccrxa = (volatile uint8_t *)0x80;
+	_tccrxb = (volatile uint8_t *)0x81;
+	_tcntxl = (volatile uint8_t *)0x84;
+	_tcntxh = (volatile uint8_t *)0x85;
+	_timskx = (volatile uint8_t *)0x6F;
+	_ocrxal = (volatile uint8_t *)0x88;
+	_ocrxah = (volatile uint8_t *)0x89;
+	_ocrxbl = (volatile uint8_t *)0x8A;
+	_ocrxbh = (volatile uint8_t *)0x8B;
+	_ocrxcl = (volatile uint8_t *)0x8C;
+	_ocrxch = (volatile uint8_t *)0x8D;
 }
 
 /*******************************************************************************
- * Method for setting the registers as T2 (atmega2560).
+ * Method for setting the registers as T3 (atmega2560).
  ******************************************************************************/
-void timer8::setRegistersT2()
+void timer16::setRegistersT3()
 {
-	_tccrxa = (volatile uint8_t *)0xB0;
-	_tccrxb = (volatile uint8_t *)0xB1;
-	_tcntx  = (volatile uint8_t *)0xB2;
-	_timskx = (volatile uint8_t *)0x70;
-	_ocrxa  = (volatile uint8_t *)0xB3;
-	_ocrxb  = (volatile uint8_t *)0xB4;
+	_tccrxa = (volatile uint8_t *)0x90;
+	_tccrxb = (volatile uint8_t *)0x91;
+	_tcntxl = (volatile uint8_t *)0x94;
+	_tcntxh = (volatile uint8_t *)0x95;
+	_timskx = (volatile uint8_t *)0x71;
+	_ocrxal = (volatile uint8_t *)0x98;
+	_ocrxah = (volatile uint8_t *)0x99;
+	_ocrxbl = (volatile uint8_t *)0x9A;
+	_ocrxbh = (volatile uint8_t *)0x9B;
+	_ocrxcl = (volatile uint8_t *)0x9C;
+	_ocrxch = (volatile uint8_t *)0x9D;
+}
+
+/*******************************************************************************
+ * Method for setting the registers as T4 (atmega2560).
+ ******************************************************************************/
+void timer16::setRegistersT4()
+{
+	_tccrxa = (volatile uint8_t *)0xA0;
+	_tccrxb = (volatile uint8_t *)0xA1;
+	_tcntxl = (volatile uint8_t *)0xA4;
+	_tcntxh = (volatile uint8_t *)0xA5;
+	_timskx = (volatile uint8_t *)0x72;
+	_ocrxal = (volatile uint8_t *)0xA8;
+	_ocrxah = (volatile uint8_t *)0xA9;
+	_ocrxbl = (volatile uint8_t *)0xAA;
+	_ocrxbh = (volatile uint8_t *)0xAB;
+	_ocrxcl = (volatile uint8_t *)0xAC;
+	_ocrxch = (volatile uint8_t *)0xAD;
+}
+
+/*******************************************************************************
+ * Method for setting the registers as T5 (atmega2560).
+ ******************************************************************************/
+void timer16::setRegistersT5()
+{
+	_tccrxa = (volatile uint8_t *)0x120;
+	_tccrxb = (volatile uint8_t *)0x121;
+	_tcntxl = (volatile uint8_t *)0x124;
+	_tcntxh = (volatile uint8_t *)0x125;
+	_timskx = (volatile uint8_t *)0x73;
+	_ocrxal = (volatile uint8_t *)0x128;
+	_ocrxah = (volatile uint8_t *)0x129;
+	_ocrxbl = (volatile uint8_t *)0x12A;
+	_ocrxbh = (volatile uint8_t *)0x12B;
+	_ocrxcl = (volatile uint8_t *)0x12C;
+	_ocrxch = (volatile uint8_t *)0x12D;
 }
 
 /*******************************************************************************
@@ -138,15 +189,14 @@ void timer8::setRegistersT2()
  *
  * @param: mode The timer operation mode, only NORMAL or CTC.
  * @param: interrupt The interrupt mode, default is NONE.
- * @param: compare TODO
+ * @param: compare The compare value.
  ******************************************************************************/
-int8_t timer8::initialize(t_mode mode, t_interrupt interrupt)
+int8_t timer16::initialize(t_mode mode, t_interrupt interrupt)
 {
 	int8_t ret = 0;
 	
 	//t_mode
 	if(mode==t_mode::NORMAL or mode==t_mode::CTC)ret = setMode(mode);
-	else{ret=-1;}
 	if(ret==-1)return ret;
 	
 	//t_channel.
@@ -156,7 +206,7 @@ int8_t timer8::initialize(t_mode mode, t_interrupt interrupt)
 	//t_interrupt.
 	ret = setInterruptMode(interrupt);
 	if(ret==-1)return ret;
-
+	
 	return ret;
 }
 
@@ -168,13 +218,12 @@ int8_t timer8::initialize(t_mode mode, t_interrupt interrupt)
  * @param: interrupt The interrupt mode, default is NONE.
  * @param: inverted TODO
  ******************************************************************************/
-int8_t timer8::initialize(t_mode mode, t_channel channel, t_inverted inverted)
+int8_t timer16::initialize(t_mode mode, t_channel channel, t_inverted inverted)
 {
 	int8_t ret = 0;
 	
 	//t_mode
 	if(mode==t_mode::PWM_F or mode==t_mode::PWM_PC)ret = setMode(mode);
-	else{ret=-1;}
 	if(ret==-1)return ret;
 	
 	//t_interrupt.
@@ -183,7 +232,6 @@ int8_t timer8::initialize(t_mode mode, t_channel channel, t_inverted inverted)
 	
 	//t_channel.
 	ret = setPwmChannel(channel, inverted);
-	
 	return ret;
 }
 
@@ -192,7 +240,7 @@ int8_t timer8::initialize(t_mode mode, t_channel channel, t_inverted inverted)
  *
  * @param: mode The timer operation mode.
  ******************************************************************************/
-int8_t timer8::setMode(t_mode mode)
+int8_t timer16::setMode(t_mode mode)
 {
 	int8_t ret = 0;
 	
@@ -219,11 +267,14 @@ int8_t timer8::setMode(t_mode mode)
 			setMode2PhaseCorrectPwm();
 			break;
 		
+		case t_mode::PWM_FC :
+			setMode2FrequencyCorrectPwm();
+			break;
+		
 		case t_mode::NONE :
 			//Nothing.
 			break;
 		
-		case t_mode::PWM_FC :
 		default :
 			ret = -1;
 			return ret;
@@ -235,7 +286,7 @@ int8_t timer8::setMode(t_mode mode)
 /*******************************************************************************
  * Private method for setting the timer mode 2 NORMAL.
  ******************************************************************************/
-void timer8::setMode2Normal()
+void timer16::setMode2Normal()
 {
 	//Normal mode.
 	*_tccrxa &= 0x0C;					// WGMx0  = 0;
@@ -244,7 +295,7 @@ void timer8::setMode2Normal()
 								// COMxB1 = 0;
 								// COMxA0 = 0;
 								// COMxA1 = 0;
-	*_tccrxb &= ~(1 << 3); 					// WGMx2  = 0;
+	*_tccrxb &= 0xF7; 					// WGMx2  = 0;
 	
 	//Set var.
 	_mode = t_mode::NORMAL;
@@ -253,7 +304,7 @@ void timer8::setMode2Normal()
 /*******************************************************************************
  * Private method for setting the timer mode 2 CTC.
  ******************************************************************************/
-void timer8::setMode2Ctc()
+void timer16::setMode2Ctc()
 {
 	//CTC Mode.
 	*_tccrxa &= 0x0C;					// WGMx0  = 0;
@@ -262,7 +313,7 @@ void timer8::setMode2Ctc()
 								// COMxB1 = 0;
 								// COMxA0 = 0;
 								// COMxA1 = 0;
-	*_tccrxb &= ~(1 << 3); 					// WGMx2  = 0;
+	*_tccrxb &= 0xF7; 					// WGMx2  = 0;
 	
 	//Set var.
 	_mode = t_mode::CTC;
@@ -273,17 +324,17 @@ void timer8::setMode2Ctc()
  *
  * @param: interrupt The timer interrupt mode.
  ******************************************************************************/
-int8_t timer8::setInterruptMode(t_interrupt interrupt)
+int8_t timer16::setInterruptMode(t_interrupt interrupt)
 {
 	int8_t ret = 0;
 	
 	//RESET VARS.
 	_interrupt = t_interrupt::NONE;
 	*_timskx = 0x00;
-	_t8[7] = {};
+	*_t16[17] = {};
 	
-	//CHECK ALIAS.
-	if(_alias!=t_alias::T0 and _alias!=t_alias::T2 and _alias!=t_alias::TX)
+	//CHECK ALIAS.	
+	if(_alias!=t_alias::T1 and _alias!=t_alias::T3 and _alias!=t_alias::T4 and _alias!=t_alias::T5 and _alias!=t_alias::TX)
 	{
 		ret = -1;
 		return ret;
@@ -298,23 +349,36 @@ int8_t timer8::setInterruptMode(t_interrupt interrupt)
 	
 		case t_interrupt::OVF : 
 			*_timskx = 0x01;
-			if(_alias==t_alias::T0)_t8[0]=this;
-			else{_t8[1]=this;}
+			if(_alias==t_alias::T1)_t16[0]=this;
+			else if(_alias==t_alias::T3)_t16[1]=this;
+			else if(_alias==t_alias::T4)_t16[2]=this;
+			else{_t16[3]=this;}
 			break;
 	
 		case t_interrupt::COMPA :
 			*_timskx = 0x02;
-			if(_alias==t_alias::T0)_t8[2]=this;
-			else{_t8[3]=this;}
+			if(_alias==t_alias::T1)_t16[4]=this;
+			else if(_alias==t_alias::T3)_t16[5]=this;
+			else if(_alias==t_alias::T4)_t16[6]=this;
+			else{_t16[7]=this;}
 			break;
 	
 		case t_interrupt::COMPB :
 			*_timskx = 0x04;
-			if(_alias==t_alias::T0)_t8[4]=this;
-			else{_t8[5]=this;}
+			if(_alias==t_alias::T1)_t16[8]=this;
+			else if(_alias==t_alias::T3)_t16[9]=this;
+			else if(_alias==t_alias::T4)_t16[10]=this;
+			else{_t16[11]=this;}
 			break;
 		
 		case t_interrupt::COMPC :
+			*_timskx = 0x08;
+			if(_alias==t_alias::T1)_t16[12]=this;
+			else if(_alias==t_alias::T3)_t16[13]=this;
+			else if(_alias==t_alias::T4)_t16[14]=this;
+			else{_t16[15]=this;}
+			break;
+		
 		default :
 			ret = -1;
 			return ret;
@@ -328,7 +392,7 @@ int8_t timer8::setInterruptMode(t_interrupt interrupt)
 /*******************************************************************************
  * Private method for setting the timer mode 2 fast PWM.
  ******************************************************************************/
-void timer8::setMode2FastPwm()
+void timer16::setMode2FastPwm()
 {
 	//Fast PWM.
 	*_tccrxa &= 0x0C;					// WGMx0  = 1;
@@ -336,9 +400,8 @@ void timer8::setMode2FastPwm()
 	*_tccrxa |=  (1 << 1);					// COMxB0 = 0;
 								// COMxB1 = 0;
 								// COMxA0 = 0;
-								// COMxA1 = 0;
-	//*_tccrxb |=  (1 << 3); 					// WGMx2  = 1;
-	*_tccrxb &= ~(1 << 3); 
+	*_tccrxb &= 0xF7;					// COMxA1 = 0; TODO::check 0xF7
+	//*_tccrxb |= (1 << 3);		 				// WGMx2  = 1;
 	
 	//Set var.
 	_mode = t_mode::PWM_F;
@@ -347,75 +410,118 @@ void timer8::setMode2FastPwm()
 /*******************************************************************************
  * Private method for setting the timer mode 2 phase correct PWM.
  ******************************************************************************/
-void timer8::setMode2PhaseCorrectPwm()
+void timer16::setMode2PhaseCorrectPwm()
 {
 	//Phase Correct PWM.
 	*_tccrxa &= 0x0C;					// WGMx0  = 1;
 	*_tccrxa |=  (1 << 0);					// WGMx1  = 0;
-	*_tccrxa &= ~(1 << 1);					// COMxB0 = 0;
+								// COMxB0 = 0;
 								// COMxB1 = 0;
 								// COMxA0 = 0;
-								// COMxA1 = 0;
-	//*_tccrxb |=  (1 << 3); 					// WGMx2  = 1;
-	*_tccrxb &= ~(1 << 3); 
+	*_tccrxb &= 0xF7;					// COMxA1 = 0; TODO::check 0xF7
+	//*_tccrxb |= (1 << 3);			 			// WGMx2  = 1;
 	
 	//Set var.
 	_mode = t_mode::PWM_PC;
 }
 
 /*******************************************************************************
- * Method for setting the timer interrupt mode.
- *
- * @param: interrupt The timer interrupt mode.
+ * Private method for setting the timer mode 2 phase correct PWM.
+ * TODO::
  ******************************************************************************/
-int8_t timer8::setPwmChannel(t_channel channel, t_inverted inverted)
+void timer16::setMode2FrequencyCorrectPwm()
+{
+	//Phase Correct PWM.
+	*_tccrxa &= 0x0C;					// WGMx0  = 1;
+	//*_tccrxa |= (1 << 0);					// WGMx1  = 0;
+								// COMxB0 = 0;
+								// COMxB1 = 0;
+								// COMxA0 = 0;
+	*_tccrxb &= 0xF7;					// COMxA1 = 0; TODO::check 0xF7
+	//*_tccrxb |= (1 << 3); 				// WGMx2  = 1;
+	
+	//Set var.
+	_mode = t_mode::PWM_FC;
+}
+
+/*******************************************************************************
+ * Method for setting the pwm channel.
+ * 
+ * TODO::PWM w/ specified top value.
+ * 
+ * @param: channel The pwm channel.
+ * @param: inverted Do we want inverted PWM ? TRUE : FALSE
+ ******************************************************************************/
+int8_t timer16::setPwmChannel(t_channel channel, t_inverted inverted)
 {
 	int8_t ret = 0;
 	
+	//RESET VARS.
 	_channel = t_channel::NONE;
+	_inverted = t_inverted::NONE;
 	*_tccrxa &= 0x0F;
 	*_tccrxb &= 0xFB;
-
+	
 	//PWM channel.
 	switch(channel)
 	{
-		//No PWM channel.
 		case t_channel::NONE : 
 			//Nothing.
 			break;
-		
-		//Channel A.
+	
 		case t_channel::A : 
 			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x80;
 			else{*_tccrxa |= 0xC0;}
 			break;
-		
-		//Channel B.
+	
 		case t_channel::B :
 			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x20;
 			else{*_tccrxa |= 0x30;}
 			break;
 		
-		//Channel B w/ specified TOP-value.
-		case t_channel::B_TOP :
+		case t_channel::B_TOP : //TODO::check tccrxa
 			*_tccrxb |= 0x04;
 			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0xA0;
 			else{*_tccrxa |= 0xF0;}
 			break;
 		
-		//Channel A & B.
+		case t_channel::C :
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x08;
+			else{*_tccrxa |= 0x0C;}
+			break;
+		
+		case t_channel::C_TOP : //TODO::check tccrxa
+			*_tccrxb |= 0x04;
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0xA0;
+			else{*_tccrxa |= 0xF0;}
+			break;
+		
 		case t_channel::AB :
 			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0xA0;
 			else{*_tccrxa |= 0xF0;}
 			break;
 		
-		//Invalid options.
-		case t_channel::C :
-		case t_channel::C_TOP :
 		case t_channel::AC :
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x88;
+			else{*_tccrxa |= 0xCC;}
+			break;
+		
 		case t_channel::BC :
-		case t_channel::BC_TOP :
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x28;
+			else{*_tccrxa |= 0x3C;}
+			break;
+		
+		case t_channel::BC_TOP : //TODO::check tccrxa
+			*_tccrxb |= 0x04;
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0x28;
+			else{*_tccrxa |= 0x3C;}
+			break;
+		
 		case t_channel::ABC :
+			if(inverted==t_inverted::NORMAL)*_tccrxa |= 0xA8;
+			else{*_tccrxa |= 0xFC;}
+			break;
+		
 		default :
 			ret = -1;
 			return ret;
@@ -430,30 +536,21 @@ int8_t timer8::setPwmChannel(t_channel channel, t_inverted inverted)
 /*******************************************************************************
  * Method for setting the timer prescaler value.
  * 
- *    VALUE | TIMER 0 | TIMER 2
- *     	  1 |    x    |   x
- * 	  8 |    x    |   x
- *       32 |	      |   x
- *       64 |    x    |   x
- *      256 |    x    |   
- *     1024 |    x    |
- * 
- * TODO::don't allow prescaler with wrong timer.
+ *    VALUE | TIMER 1 | TIMER 3 | TIMER 4 | TIMER 5
+ *     	  1 |    x    |    x	|    x    |    x
+ * 	  8 |    x    |    x	|    x    |    x
+ *       64 |    x    |    x	|    x    |    x
+ *      256 |    x    |    x    |    x    |    x   
+ *     1024 |    x    |    x    |    x    |    x
  * 
  * @param: prescale The prescaler value.   
  ******************************************************************************/
-int8_t timer8::setPrescaler(uint16_t prescale)
+int8_t timer16::setPrescaler(uint16_t prescale)
 {
 	int8_t ret = 0;
 	
 	_prescale = 0;
 	*_tccrxb &= 0xF8;
-	
-	if(_alias!=t_alias::T0 and _alias!=t_alias::T2)
-	{
-		ret = -1;
-		return ret;
-	}
 	
 	switch(prescale)
 	{
@@ -470,34 +567,27 @@ int8_t timer8::setPrescaler(uint16_t prescale)
 			*_tccrxb |= 0x02;
 			break;
 		
-		case 32 :
-			if(_alias==t_alias::T2)*_tccrxb |= 0x03;
-			else{ret=-1;return ret;}
+		case 64 :
+			*_tccrxb |= 0x03;
 			break;
 		
-		case 64 :
-			if(_alias==t_alias::T0)*_tccrxb |= 0x03;
-			else{*_tccrxb |= 0x04;}
-			break;
-			
 		case 256 :
-			if(_alias==t_alias::T0)*_tccrxb |= 0x04;
-			else{ret=-1;return ret;}
+			*_tccrxb |= 0x04;
+			break;
+		
+		case 1024 :
+			*_tccrxb |= 0x05;
 			break;
 	
-		case 1024 :
-			if(_alias==t_alias::T0)*_tccrxb |= 0x05;
-			else{ret=-1;return ret;}
-			break;
-		
 		default :
 			ret = -1;
-			return ret;
+			return ret;	
 	}
 	
 	_prescale = prescale;
 	
 	return ret;
+	
 }
 
 /*******************************************************************************
@@ -505,9 +595,10 @@ int8_t timer8::setPrescaler(uint16_t prescale)
  *
  * @param compare The compare value (unsigned byte).
  ******************************************************************************/
-void timer8::setCompareValueA(uint8_t compare)
+void timer16::setCompareValueA(uint16_t compare)
 {
-	*_ocrxa = compare;
+	*_ocrxah = (uint8_t)((compare >> 8) & 0xFF);
+	*_ocrxal = (uint8_t)(compare & 0xFF);
 }
 
 /*******************************************************************************
@@ -515,25 +606,37 @@ void timer8::setCompareValueA(uint8_t compare)
  *
  * @param compare The compare value (unsigned byte).
  ******************************************************************************/
-void timer8::setCompareValueB(uint8_t compare)
+void timer16::setCompareValueB(uint16_t compare)
 {
-	*_ocrxb = compare;
+	*_ocrxbh = (uint8_t)((compare >> 8) & 0xFF);
+	*_ocrxbl = (uint8_t)(compare & 0xFF);
+}
+
+/*******************************************************************************
+ * Method for setting the OCRxB register.
+ *
+ * @param compare The compare value (unsigned byte).
+ ******************************************************************************/
+void timer16::setCompareValueC(uint16_t compare)
+{
+	*_ocrxch = (uint8_t)((compare >> 8) & 0xFF);
+	*_ocrxcl = (uint8_t)(compare & 0xFF);
 }
 
 /*******************************************************************************
  * 
  ******************************************************************************/
-int8_t timer8::setDutyCycleA(float dutyCycle)
+int8_t timer16::setDutyCycleA(float dutyCycle)
 {
 	int8_t ret = 0;
-	uint8_t compare = 0;
+	uint16_t compare = 0;
 	
-	if(_mode==t_mode::PWM_F or _mode==t_mode::PWM_PC)
+	if(_mode==t_mode::PWM_F or _mode==t_mode::PWM_PC or _mode==t_mode::PWM_FC)
 	{
 		if(dutyCycle > 1.0)dutyCycle=1.0;
 		else if(dutyCycle < 0.0)dutyCycle=0.0;
 		
-		compare = (uint8_t)(dutyCycle*0xFF - 1);
+		compare = uint8_t(dutyCycle*0xFFFF-1);
 		
 		setCompareValueA(compare);
 	}
@@ -548,17 +651,18 @@ int8_t timer8::setDutyCycleA(float dutyCycle)
 /*******************************************************************************
  * 
  ******************************************************************************/
-int8_t timer8::setDutyCycleB(float dutyCycle)
+int8_t timer16::setDutyCycleB(float dutyCycle)
 {
 	int8_t ret = 0;
-	uint8_t compare = 0;
+	uint16_t compare = 0;
 	
-	if(_mode==t_mode::PWM_F or _mode==t_mode::PWM_PC)
+	if(_mode==t_mode::PWM_F or _mode==t_mode::PWM_PC or _mode==t_mode::PWM_PC)
 	{
 		if(dutyCycle > 1.0)dutyCycle=1.0;
 		else if(dutyCycle < 0.0)dutyCycle=0.0;
 		
-		compare = (uint8_t)(dutyCycle*0xFF - 1);
+		if(*_ocrxal==0x00)compare = uint8_t(dutyCycle*0xFFFF-1);
+		else{compare = uint8_t(dutyCycle*((*_ocrxah << 8) | (*_ocrxal & 0xFF))-1);}
 		
 		setCompareValueB(compare);
 	}
@@ -573,23 +677,50 @@ int8_t timer8::setDutyCycleB(float dutyCycle)
 /*******************************************************************************
  * 
  ******************************************************************************/
-void timer8::set(uint8_t value)
+int8_t timer16::setDutyCycleC(float dutyCycle)
 {
-	*_tcntx = value;
+	int8_t ret = 0;
+	uint16_t compare = 0;
+	
+	if(_mode==t_mode::PWM_F or _mode==t_mode::PWM_PC or _mode==t_mode::PWM_PC)
+	{
+		if(dutyCycle > 1.0)dutyCycle=1.0;
+		else if(dutyCycle < 0.0)dutyCycle=0.0;
+		
+		if(*_ocrxal==0x00)compare = uint8_t(dutyCycle*0xFFFF-1);
+		else{compare = uint8_t(dutyCycle*(((*_ocrxah & 0xFF )<< 8) | (*_ocrxal & 0xFF))-1);}
+		
+		setCompareValueC(compare);
+	}
+	else
+	{
+		ret = -1;
+	}
+	
+	return ret;
+}
+
+/*******************************************************************************
+ * 
+ ******************************************************************************/
+void timer16::set(uint16_t value)
+{
+	*_tcntxh = (uint8_t)((value >> 8) & 0xFF);
+	*_tcntxl = (uint8_t)(value & 0xFF);
 }
 
 /*******************************************************************************
  * TODO::clear interrupt bits.
  ******************************************************************************/
-void timer8::reset()
+void timer16::reset()
 {
-	set(0x00);
+	set(0x0000);
 }
 
 /*******************************************************************************
  * TODO::clear interrupt bits.
  ******************************************************************************/
-void timer8::hardReset()
+void timer16::hardReset()
 {
 	if(_interrupt!=t_interrupt::NONE)setInterruptMode(t_interrupt::NONE);
 	if(_channel!=t_channel::NONE)setPwmChannel(t_channel::NONE, t_inverted::NONE);
@@ -600,9 +731,21 @@ void timer8::hardReset()
 /*******************************************************************************
  * 
  ******************************************************************************/
-uint8_t timer8::getCount()
+uint16_t timer16::getCount()
 {
-	return *_tcntx;
+	uint16_t count;
+	
+	count = (((*_tcntxh & 0xFF) << 8) | (*_tcntxl & 0xFF));
+	
+	return count;
+}
+
+/*******************************************************************************
+ * 
+ ******************************************************************************/
+uint32_t timer16::getOverflows()
+{
+	return _overflows;
 }
 
 /*******************************************************************************
@@ -613,10 +756,10 @@ uint8_t timer8::getCount()
  * 
  * @return: _nonResetCount The count value since last reset.
  ******************************************************************************/
-uint32_t timer8::getNonResetCount()
+uint32_t timer16::getNonResetCount()
 {
 	uint8_t count = getCount();
-	uint8_t top = 0xFE;
+	uint16_t top = 0xFFFE;
 	uint32_t nonResetCount = 0x00000000;
 	
 	//TODO::set the top value according to the timer mode.	
@@ -629,15 +772,7 @@ uint32_t timer8::getNonResetCount()
 /*******************************************************************************
  * 
  ******************************************************************************/
-uint32_t timer8::getOverflows()
-{
-	return _overflows;
-}
-
-/*******************************************************************************
- * 
- ******************************************************************************/
-t_alias timer8::getAlias()
+t_alias timer16::getAlias()
 {
 	return _alias;
 }
@@ -645,7 +780,7 @@ t_alias timer8::getAlias()
 /*******************************************************************************
  * 
  ******************************************************************************/
-t_mode timer8::getMode()
+t_mode timer16::getMode()
 {
 	return _mode;
 }
@@ -653,7 +788,7 @@ t_mode timer8::getMode()
 /*******************************************************************************
  * 
  ******************************************************************************/
-t_interrupt timer8::getInterruptMode()
+t_interrupt timer16::getInterruptMode()
 {
 	return _interrupt;
 }
@@ -661,7 +796,7 @@ t_interrupt timer8::getInterruptMode()
 /*******************************************************************************
  * 
  ******************************************************************************/
-t_channel timer8::getChannel()
+t_channel timer16::getChannel()
 {
 	return _channel;
 }
@@ -669,7 +804,7 @@ t_channel timer8::getChannel()
 /*******************************************************************************
  * 
  ******************************************************************************/
-t_inverted timer8::getInverted()
+t_inverted timer16::getInverted()
 {
 	return _inverted;
 }
@@ -677,7 +812,7 @@ t_inverted timer8::getInverted()
 /*******************************************************************************
  * ISR for the timer class.
  ******************************************************************************/
-void timer8::interruptServiceRoutine(void)
+void timer16::interruptServiceRoutine(void)
 {
 	_overflows++;
 }
@@ -685,7 +820,7 @@ void timer8::interruptServiceRoutine(void)
 /*******************************************************************************
  * Enable timer interrupts.
  ******************************************************************************/
-void timer8::enable(void)
+void timer16::enable(void)
 {
 	//TODO::
 }
@@ -693,7 +828,7 @@ void timer8::enable(void)
 /*******************************************************************************
  * Disable timer interrupts.
  ******************************************************************************/
-void timer8::disable(void)
+void timer16::disable(void)
 {
 	//TODO::
 }
@@ -701,7 +836,7 @@ void timer8::disable(void)
 /*******************************************************************************
  * Clear timer interrupts.
  ******************************************************************************/
-void timer8::clear(void)
+void timer16::clear(void)
 {
 	//TODO::
 }
@@ -709,10 +844,10 @@ void timer8::clear(void)
 /*******************************************************************************
  * Global forward declaration.
  ******************************************************************************/
-timer8 * timer8::_t8[7] = {};
+timer16 * timer16::_t16[17] = {};
 
 /*******************************************************************************
- * __vector_x -> ISR().
+ * _vector__x -> ISR().
  * 
  * TODO::different avrs.
  * 
@@ -721,29 +856,57 @@ timer8 * timer8::_t8[7] = {};
 #define TIMER_ISR(t, vect, n)							\
 ISR(TIMER ## t ## _ ## vect ## _vect)						\
 {										\
-	if(timer8::_t8[n])timer8::_t8[n] -> interruptServiceRoutine();		\
+	if(timer16::_t16[n])timer16::_t16[n] -> interruptServiceRoutine();	\
 }
 
-#if not defined(ARDUINO)
-	#if defined(TIMER0_OVF_vect)
-	TIMER_ISR(0, OVF, 0)		//Used by arduino.
-	#endif
+#if defined(TIMER1_OVF_vect)
+TIMER_ISR(1, OVF, 0)
 #endif
-#if defined(TIMER2_OVF_vect)
-TIMER_ISR(2, OVF, 1)
+#if defined(TIMER3_OVF_vect)
+TIMER_ISR(3, OVF, 1)
 #endif
-
-#if defined(TIMER0_COMPA_vect)
-TIMER_ISR(0, COMPA, 2)
+#if defined(TIMER4_OVF_vect)
+TIMER_ISR(4, OVF, 2)
 #endif
-#if defined(TIMER2_COMPA_vect)
-TIMER_ISR(2, COMPA, 3)
+#if defined(TIMER5_OVF_vect)
+TIMER_ISR(5, OVF, 3)
 #endif
 
-#if defined(TIMER0_COMPB_vect)
-TIMER_ISR(0, COMPB, 4)
+#if defined(TIMER1_COMPA_vect)
+TIMER_ISR(1, COMPA, 4)
 #endif
-#if defined(TIMER2_COMPB_vect)
-TIMER_ISR(2, COMPB, 5)
+#if defined(TIMER3_COMPA_vect)
+TIMER_ISR(3, COMPA, 5)
 #endif
- 
+#if defined(TIMER4_COMPA_vect)
+TIMER_ISR(4, COMPA, 6)
+#endif
+#if defined(TIMER5_COMPA_vect)
+TIMER_ISR(5, COMPA, 7)
+#endif
+
+#if defined(TIMER1_COMPB_vect)
+TIMER_ISR(1, COMPB, 8)
+#endif
+#if defined(TIMER3_COMPB_vect)
+TIMER_ISR(3, COMPB, 9)
+#endif
+#if defined(TIMER4_COMPB_vect)
+TIMER_ISR(4, COMPB, 10)
+#endif
+#if defined(TIMER5_COMPB_vect)
+TIMER_ISR(5, COMPB, 11)
+#endif
+
+#if defined(TIMER1_COMPC_vect)
+TIMER_ISR(1, COMPC, 12)
+#endif
+#if defined(TIMER3_COMPC_vect)
+TIMER_ISR(3, COMPC, 13)
+#endif
+#if defined(TIMER4_COMPC_vect)
+TIMER_ISR(4, COMPC, 14)
+#endif
+#if defined(TIMER5_COMPC_vect)
+TIMER_ISR(5, COMPC, 15)
+#endif

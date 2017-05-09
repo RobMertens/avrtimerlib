@@ -1,2 +1,3 @@
-# avrtimerlib
-Timer library for avr-timers, arduino in particular.
+## avrtimerlib
+
+Timer library for Arduino Mega (atmega2560).
