@@ -18,47 +18,49 @@ class interrupt;
 class timer8 : private interrupt::handler
 {
 	public:
-		//Constructors ***************************************************************
-		timer8(t_alias);
-		timer8();		
+		//Constructors *************************************************************
+		timer8(void);
+		timer8(const t_alias);
 		timer8(volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *);
-		
-		//Setters ********************************************************************
-		void setCompareValueA(uint8_t);
-		void setCompareValueB(uint8_t);
-		
-		void set(uint8_t);
-		void reset();
-		void hardReset();
-		
+
+		//Setters ******************************************************************
+		void setCompareValueA(const uint8_t);
+		void setCompareValueB(const uint8_t);
+		void set(const uint8_t);
+		void reset(void);
+		void hardReset(void);
 		virtual void interruptServiceRoutine(void);
 		virtual void enable(void);
 		virtual void disable(void);
 		virtual void clear(void);
-		
-		//Getters ********************************************************************
-		int8_t setAlias(t_alias);
-		
-		int8_t initialize(t_mode, t_interrupt);
-		int8_t initialize(t_mode, t_channel, t_inverted);
-		
-		int8_t setPrescaler(uint16_t);
-		
+
+		//Getters ******************************************************************
+		int8_t setAlias(const t_alias);
+		int8_t initialize(const t_mode, const t_interrupt);
+		int8_t initialize(const t_mode, const t_channel, const t_inverted);
+		int8_t setPrescaler(const uint16_t);
 		int8_t setDutyCycleA(float);
 		int8_t setDutyCycleB(float);
-		
-		uint8_t getCount();
-		uint32_t getOverflows();
-		uint32_t getNonResetCount();
-		
-		t_alias		getAlias();
-		t_mode		getMode();
-		t_interrupt	getInterruptMode();	
-		t_channel	getChannel();
-		t_inverted	getInverted();
-		
-	private:		
-		// Registers.
+		uint8_t getCount(void);
+		uint32_t getOverflows(void);
+		uint32_t getNonResetCount(void);
+		t_alias	getAlias(void);
+		t_mode getMode(void);
+		t_interrupt	getInterruptMode(void);
+		t_channel	getChannel(void);
+		t_inverted getInverted(void);
+
+	private:
+		//Variables ****************************************************************
+		t_alias _alias;
+		t_mode _mode;
+		t_interrupt _interrupt;
+		t_channel _channel;
+		t_inverted _inverted;
+		uint16_t _prescale;
+		uint32_t _overflows;
+
+		//Registers ****************************************************************
 		volatile uint8_t * _tcntx;			// TIMER COUNT
 		volatile uint8_t * _tccrxa;			// PRESCALER
 		volatile uint8_t * _tccrxb;			// PRESCALER
@@ -66,44 +68,27 @@ class timer8 : private interrupt::handler
 		volatile uint8_t * _ocrxa;
 		volatile uint8_t * _ocrxb;
 
-		// Timer operation settings.
-		t_alias _alias;
-		uint16_t _prescale;
-		
-		t_mode		_mode;
-		t_interrupt	_interrupt;
-		t_channel	_channel;
-		t_inverted	_inverted;
-		
-		// Overflows.		
-		uint32_t _overflows;
-		
-		// ALIAS.
-		void setRegistersT0();
-		void setRegistersT2();
-		
-		// Modes.
-		int8_t setMode(t_mode);
-		// Functions for NORMAL or CTC.
-		void setMode2Normal();
-		void setMode2Ctc();	
-		int8_t setInterruptMode(t_interrupt);
-		// Functions for PWM.
-		void setMode2FastPwm();
-		void setMode2PhaseCorrectPwm();	
-		int8_t setPwmChannel(t_channel, t_inverted);
-		
+		//Setters ******************************************************************
+		void setRegistersT0(void);
+		void setRegistersT2(void);
+		void setMode2Normal(void);
+		void setMode2Ctc(void);
+		void setMode2FastPwm(void);
+		void setMode2PhaseCorrectPwm(void);
+
+		//Getters ******************************************************************
+		int8_t setMode(const t_mode);
+		int8_t setInterruptMode(const t_interrupt);
+		int8_t setPwmChannel(const t_channel, const t_inverted);
+
+		//Interrupt vectors ********************************************************
 		static timer8 * _t8[7];
-		
-		// Friend void.	
 		friend void TIMER0_OVF_vect(void);
 		friend void TIMER2_OVF_vect(void);
-		
 		friend void TIMER0_COMPA_vect(void);
 		friend void TIMER2_COMPA_vect(void);
-		
 		friend void TIMER0_COMPB_vect(void);
 		friend void TIMER2_COMPB_vect(void);
-		
+
 };
 #endif
