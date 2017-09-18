@@ -18,15 +18,24 @@ class interrupt;
 class timer8 : private interrupt::handler
 {
 	public:
+		//Typedefs *****************************************************************
+		typedef timer8 * ptr;
+		typedef timer8 * const cptr;
+
 		//Constructors *************************************************************
 		timer8(void);
-		timer8(const t_alias);
-		timer8(volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *, volatile uint8_t *);
+		timer8(const t_settings::alias&);
+		timer8(const volatile uint8_t * const&,
+					 const volatile uint8_t * const&,
+					 const volatile uint8_t * const&,
+					 const volatile uint8_t * const&,
+					 const volatile uint8_t * const&,
+					 const volatile uint8_t * const&);
 
 		//Setters ******************************************************************
-		void setCompareValueA(const uint8_t);
-		void setCompareValueB(const uint8_t);
-		void set(const uint8_t);
+		void setCompareValueA(const uint8_t&);
+		void setCompareValueB(const uint8_t&);
+		void set(const uint8_t&);
 		void reset(void);
 		void hardReset(void);
 		virtual void interruptServiceRoutine(void);
@@ -35,28 +44,28 @@ class timer8 : private interrupt::handler
 		virtual void clear(void);
 
 		//Getters ******************************************************************
-		int8_t setAlias(const t_alias);
-		int8_t initialize(const t_mode, const t_interrupt);
-		int8_t initialize(const t_mode, const t_channel, const t_inverted);
-		int8_t setPrescaler(const uint16_t);
-		int8_t setDutyCycleA(float);
-		int8_t setDutyCycleB(float);
+		int8_t setAlias(const t_settings::alias&);
+		int8_t initialize(const t_settings::mode&, const t_settings::interrupt&);
+		int8_t initialize(const t_settings::mode&, const t_settings::channel&, const t_settings::inverted&);
+		int8_t setPrescaler(const uint16_t&);
+		int8_t setDutyCycleA(float&);
+		int8_t setDutyCycleB(float&);
 		uint8_t getCount(void);
 		uint32_t getOverflows(void);
 		uint32_t getNonResetCount(void);
-		t_alias	getAlias(void);
-		t_mode getMode(void);
-		t_interrupt	getInterruptMode(void);
-		t_channel	getChannel(void);
-		t_inverted getInverted(void);
+		t_settings::alias	getAlias(void);
+		t_settings::mode getMode(void);
+		t_settings::interrupt	getInterruptMode(void);
+		t_settings::channel	getChannel(void);
+		t_settings::inverted getInverted(void);
 
 	private:
 		//Variables ****************************************************************
-		t_alias _alias;
-		t_mode _mode;
-		t_interrupt _interrupt;
-		t_channel _channel;
-		t_inverted _inverted;
+		t_settings::alias _alias;
+		t_settings::mode _mode;
+		t_settings::interrupt _interrupt;
+		t_settings::channel _channel;
+		t_settings::inverted _inverted;
 		uint16_t _prescale;
 		uint32_t _overflows;
 
@@ -77,9 +86,9 @@ class timer8 : private interrupt::handler
 		void setMode2PhaseCorrectPwm(void);
 
 		//Getters ******************************************************************
-		int8_t setMode(const t_mode);
-		int8_t setInterruptMode(const t_interrupt);
-		int8_t setPwmChannel(const t_channel, const t_inverted);
+		int8_t setMode(const t_settings::mode&);
+		int8_t setInterruptMode(const t_settings::interrupt&);
+		int8_t setPwmChannel(const t_settings::channel&, const t_settings::inverted&);
 
 		//Interrupt vectors ********************************************************
 		static timer8 * _t8[7];

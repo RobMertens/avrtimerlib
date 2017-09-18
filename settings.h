@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+namespace t_settings
+{
+
 /*******************************************************************************
  * Available timers on ATMEGA2560.
  *
@@ -14,7 +17,7 @@
  * T5 (16-bit),
  * TX (for non-atmega2560 timers).
  ******************************************************************************/
-enum class t_alias : int8_t
+enum class alias : int8_t
 {
 	NONE		= -1,
 	T0			= 0,
@@ -30,13 +33,13 @@ enum class t_alias : int8_t
  * Available timer modes:
  *
  * NONE 	: Non-operating mode.
- * NORMAL 	: Normal mode.
+ * NORMAL : Normal mode.
  * CTC		: Clear on Compare mode.
  * PWM_F	: Phase Width Modulation Fast mode.
  * PWM_PC	: Phase Width Modulation Phase Correct mode.
  * PWM_FC	: Phase Width Modulation Frequency Correct mode.
  ******************************************************************************/
-enum class t_mode : uint8_t
+enum class mode : uint8_t
 {
 	NONE		= 0,
 	NORMAL	= 1,
@@ -49,7 +52,7 @@ enum class t_mode : uint8_t
 /*******************************************************************************
  * Interrupts only in NORMAL or CTC.
  ******************************************************************************/
-enum class t_interrupt : uint8_t
+enum class interrupt : uint8_t
 {
 	NONE		= 0,
 	OVF			= 1,
@@ -65,7 +68,7 @@ enum class t_interrupt : uint8_t
  * The TOP channels are used to set a specific TOP value in OCRA. Note that you
  * lose resolution.
  ******************************************************************************/
-enum class t_channel : uint8_t
+enum class channel : uint8_t
 {
 	NONE		= 0,
 	A				= 1,
@@ -83,11 +86,13 @@ enum class t_channel : uint8_t
 /*******************************************************************************
  * PWM inverted.
  ******************************************************************************/
-enum class t_inverted : uint8_t
+enum class inverted : uint8_t
 {
 	NONE		= 0,
 	NORMAL	= 1,
 	INV			= 2
 };
+
+}; //End namespace settings.
 
 #endif
