@@ -3,7 +3,7 @@
   "keywords": "avr, atmega2560, counter, timer, interrupt, pwm",
   "description": "This library provides functions for avr-atmega2560-timers.",
   "url": "https://github.com/RobMertens/avrtimerlib",
-  "include": "timer8, timer16",
+  "include": "timer8, timer16, timer, factory",
   "authors": [{ "name": "Rob Mertens" }],
   "frameworks": "arduino"
 }

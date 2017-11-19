@@ -556,7 +556,7 @@ void Timer8::set(const size_t value)
 void Timer8::reset(void)
 {
 	set(0x00);
-	overflow_ = 0x00000000;
+	overflows_ = 0x00000000;
 }
 
 void Timer8::hardReset(void)

@@ -3,10 +3,10 @@
 # keywords.txt
 #
 # Syntax coloring map.
-# 
+#
 # @author: 	Rob Mertens
 # @date:	09/05/2017
-# @version:	1.1.1   
+# @version:	1.1.1
 #######################################
 
 #######################################
@@ -15,18 +15,16 @@
 
 t_alias				KEYWORD1
 t_mode				KEYWORD1
-t_interrupt			KEYWORD1
+t_interrupt		KEYWORD1
 t_channel			KEYWORD1
-t_inverted			KEYWORD1
+t_inverted		KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
-timer8				KEYWORD2
-timer16				KEYWORD2
-set				KEYWORD2
-reset				KEYWORD2
+set						KEYWORD2
+reset					KEYWORD2
 hardReset			KEYWORD2
 setAlias			KEYWORD2
 initialize			KEYWORD2
@@ -51,10 +49,13 @@ getInverted			KEYWORD2
 # Objects and instances (KEYWORD3)
 #######################################
 
-interrupt			KEYWORD3
-handler				KEYWORD3
-timer8				KEYWORD3
-timer16				KEYWORD3
+Interrupt			KEYWORD3
+Handler				KEYWORD3
+Timer					KEYWORD3
+Timer8				KEYWORD3
+Timer16				KEYWORD3
+TimerFactory	KEYWORD3
+
 
 #######################################
 # Constants (LITERAL1)
