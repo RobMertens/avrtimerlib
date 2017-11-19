@@ -133,17 +133,30 @@ class Timer16 : public Timer
 
 		/** Constructors/destructor/overloading ***********************************/
 		/**
-		 * @brief
+		 * @brief An empty Timer16 constructor. All settings have to be set
+		 * manually afterwards.
 		 */
 		Timer16(void);
 
 		/**
-		 * @brief
+		 * @brief A Timer16 constructor based on hardware alias.
+		 * @param The hardware alias.
 		 */
 		explicit Timer16(const t_alias);
 
 		/**
-		 * @brief
+		 * @brief A Timer16 constructor for an external timer. Each of the timer
+		 * 				registers is to by the contstructor.
+		 *				QUESTION::what for interrupt vectors?
+		 * @param
+		 * @param
+		 * @param
+		 * @param
+		 * @param
+		 * @param
+		 * @param
+		 * @param
+		 * @param
 		 */
 		Timer16(const volatile uint8_t * const&, const volatile uint8_t * const&,
 			const volatile uint8_t * const&, const volatile uint8_t * const&,
@@ -160,7 +173,7 @@ class Timer16 : public Timer
 		Timer16(const Timer16&) = delete;
 
 		/**
-		 * @brief
+		 * @brief Timer16 destructor.
 		 */
 		virtual ~Timer16(void);
 
@@ -171,7 +184,10 @@ class Timer16 : public Timer
 
 		/** Timer setting functions ***********************************************/
 		/**
-		 * @brief
+		 * @brief Function for setting the timer alias. For 16-bit timers the next
+		 *				aliases are valid: T1, T3, T4 & T5.
+		 * @param The timer hardware alias.
+		 * @return Is the alias set correctly : [0] YES ? [-1] NO.
 		 */
 		int8_t setAlias(const t_alias) override;
 
@@ -181,7 +197,7 @@ class Timer16 : public Timer
 		 * @param mode The timer operation mode, only NORMAL or CTC.
 		 * @param interrupt The interrupt mode, default is NONE.
 		 * @param compare The compare value.
-		 * @return
+		 * @return Is the timer initialized correctly : [0] YES ? [-1] NO.
 		 */
 		int8_t initialize(const t_mode, const t_interrupt) override;
 
@@ -190,8 +206,8 @@ class Timer16 : public Timer
 		 *				This method cannot set mode to NORMAL or CTC.
 		 * @param mode The timer operation mode, only PWM.
 		 * @param interrupt The interrupt mode, default is NONE.
-		 * @param inverted TODO
-		 * @return
+		 * @param inverted Is the PWM-signal inverted.
+		 * @return Is the timer initialized correctly : [0] YES ? [-1] NO.
 		 */
 		int8_t initialize(const t_mode, const t_channel, const t_inverted) override;
 
@@ -227,34 +243,53 @@ class Timer16 : public Timer
 		void hardReset(void) override;
 
 		/**
-		 * @brief
+		 * @brief Method for setting the OCRxC register.
+		 * @param The compare value (unsigned byte).
 		 */
 		void setCompareValueA(const size_t) override;
 
 		/**
 		 * @brief
-		 * @
+		 *
+		 * TODO::limits are checked and adjusted if needed. Do this at front and
+		 * pass as const argument.
+		 *
+		 * @param[out]
+		 * @return
 		 */
 		int8_t setDutyCycleA(double) override;
 
 		/**
-		 * @brief
+		 * @brief Method for setting the OCRxC register.
+		 * @param The compare value (unsigned byte).
 		 */
 		void setCompareValueB(const size_t) override;
 
 		/**
 		 * @brief
+		 *
+		 * TODO::limits are checked and adjusted if needed. Do this at front and
+		 * pass as const argument.
+		 *
+		 * @param[out]
+		 * @return
 		 */
 		int8_t setDutyCycleB(double) override;
 
 		/**
-		 * @brief
+		 * @brief Method for setting the OCRxC register.
+		 * @param The compare value (unsigned byte).
 		 */
 		void setCompareValueC(const size_t) override;
 
-
 		/**
 		 * @brief
+		 *
+		 * TODO::limits are checked and adjusted if needed. Do this at front and
+		 * pass as const argument.
+		 *
+		 * @param[out]
+		 * @return
 		 */
 		int8_t setDutyCycleC(double) override;
 
@@ -266,10 +301,16 @@ class Timer16 : public Timer
 		/**
 		 * @brief NOTE::moved to ABC.
 		 */
-		//uint32_t getOverflows(void);
+		//uint32_t getOverflows(void) __attribute__(( deprecated ));
 
 		/**
-		 * @brief
+		 * @brief Method for obtaining the total summized count since the last
+		 * reset. Thus overflows are accounted.
+		 *
+		 * NOTE::this method only works if the timer interrupts with an
+		 * timer_ovf_vect()
+		 *
+		 * @return The count value since last reset.
 		 */
 		uint32_t getNonResetCount(void);
 
@@ -277,17 +318,17 @@ class Timer16 : public Timer
 		/**
 		 * @brief NOTE::moved to ABC.
 		 */
-		//void enable(void) override;
+		//void enable(void) override __attribute__(( deprecated ));
 
 		/**
 		 * @brief NOTE::moved to ABC.
 		 */
-		//void disable(void) override;
+		//void disable(void) override __attribute__(( deprecated ));
 
 		/**
 		 * @brief NOTE::moved to ABC.
 		 */
-		//void clear(void) override;
+		//void clear(void) override __attribute__(( deprecated ));
 
 	private:
 
@@ -306,7 +347,7 @@ class Timer16 : public Timer
 		/**
 		 * @brief NOTE::moved to ABC.
 		 */
-		//void interruptServiceRoutine(void) override;
+		//void interruptServiceRoutine(void) override __attribute__(( deprecated ));
 
 		/** Registers *************************************************************/
 		/**
@@ -439,7 +480,7 @@ class Timer16 : public Timer
 	 	 * 				memory is allocated. This list is defined at global scope to Links
 		 *				it with the appropriate ISR.
 		 */
-		static Timer16 * __T16__[17];
+		static Timer16::Ptr __T16__[17];
 
 		/**
 		 * @brief

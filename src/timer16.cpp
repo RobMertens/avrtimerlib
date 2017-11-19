@@ -242,6 +242,7 @@ int8_t Timer16::initialize(const t_mode mode, const t_interrupt interrupt)
 
 	//t_mode
 	if(mode==t_mode::NORMAL or mode==t_mode::CTC)ret = setMode(mode);
+	else{ret=-1;}
 	if(ret==-1)return ret;
 
 	//t_channel.
@@ -262,6 +263,7 @@ int8_t Timer16::initialize(const t_mode mode, const t_channel channel,
 
 	//t_mode
 	if(mode==t_mode::PWM_F or mode==t_mode::PWM_PC)ret = setMode(mode);
+	else{ret=-1;}
 	if(ret==-1)return ret;
 
 	//t_interrupt.
@@ -319,13 +321,15 @@ int8_t Timer16::setMode(const t_mode mode)
 void Timer16::setMode2Normal(void)
 {
 	//Normal mode.
-	*tccrxa_ &= 0x0C;					// WGMx0  = 0;
-								// WGMx1  = 0;
-								// COMxB0 = 0;
-								// COMxB1 = 0;
-								// COMxA0 = 0;
-								// COMxA1 = 0;
-	*tccrxb_ &= 0xF7; 					// WGMx2  = 0;
+	// WGMx0  = 0;
+	*tccrxa_ &= 0x0C;
+	// WGMx1  = 0;
+	// COMxB0 = 0;
+	// COMxB1 = 0;
+	// COMxA0 = 0;
+	// COMxA1 = 0;
+	// WGMx2  = 0;
+	*tccrxb_ &= 0xF7;
 
 	//Set var.
 	mode_ = t_mode::NORMAL;
@@ -334,13 +338,16 @@ void Timer16::setMode2Normal(void)
 void Timer16::setMode2Ctc(void)
 {
 	//CTC Mode.
-	*tccrxa_ &= 0x0C;					// WGMx0  = 0;
-	*tccrxa_ |=  (1 << 1);					// WGMx1  = 1;
-								// COMxB0 = 0;
-								// COMxB1 = 0;
-								// COMxA0 = 0;
-								// COMxA1 = 0;
-	*tccrxb_ &= 0xF7; 					// WGMx2  = 0;
+	// WGMx0  = 0;
+	*tccrxa_ &= 0x0C;
+	// WGMx1  = 1;
+	*tccrxa_ |=  (1 << 1);
+	// COMxB0 = 0;
+	// COMxB1 = 0;
+	// COMxA0 = 0;
+	// COMxA1 = 0;
+	// WGMx2  = 0;
+	*tccrxb_ &= 0xF7;
 
 	//Set var.
 	mode_ = t_mode::CTC;
@@ -353,7 +360,8 @@ int8_t Timer16::setInterruptMode(const t_interrupt interrupt)
 	//RESET VARS.
 	interrupt_ = t_interrupt::NONE;
 	*timskx_ = 0x00;
-	*__T16__[17] = {};
+	//*__T16__[17] = {};
+	//NOTE::This is bad...
 
 	//CHECK ALIAS.
 	if(alias_!=t_alias::T1 and alias_!=t_alias::T3 and alias_!=t_alias::T4
@@ -361,6 +369,16 @@ int8_t Timer16::setInterruptMode(const t_interrupt interrupt)
 	{
 		ret = -1;
 		return ret;
+	}
+
+	//Delete this from static list.
+	//This could be the case if the timer is initilized for the second time
+	//during runtime.
+	for(size_t n = 0; n < sizeof(__T16__); ++n)
+	{
+		//Do both pointers point to the same adress?
+		//If so, delete pointer in the static list.
+		if(__T16__[n]==this)delete __T16__[n];
 	}
 
 	//INTERRUPT MODE.
@@ -415,13 +433,18 @@ int8_t Timer16::setInterruptMode(const t_interrupt interrupt)
 void Timer16::setMode2FastPwm(void)
 {
 	//Fast PWM.
-	*tccrxa_ &= 0x0C;					// WGMx0  = 1;
-	*tccrxa_ |=  (1 << 0);					// WGMx1  = 1;
-	*tccrxa_ |=  (1 << 1);					// COMxB0 = 0;
-								// COMxB1 = 0;
-								// COMxA0 = 0;
-	*tccrxb_ &= 0xF7;					// COMxA1 = 0; TODO::check 0xF7
-	//*tccrxb_ |= (1 << 3);		 				// WGMx2  = 1;
+	// WGMx0  = 1;
+	*tccrxa_ &= 0x0C;
+	// WGMx1 = 1;
+	*tccrxa_ |=  (1 << 0);
+	// COMxB0 = 0;
+	*tccrxa_ |=  (1 << 1);
+	// COMxB1 = 0;
+	// COMxA0 = 0;
+	// COMxA1 = 0; TODO::check 0xF7
+	*tccrxb_ &= 0xF7;
+	// WGMx2  = 1;
+	//*tccrxb_ |= (1 << 3);
 
 	//Set var.
 	mode_ = t_mode::PWM_F;
@@ -430,13 +453,17 @@ void Timer16::setMode2FastPwm(void)
 void Timer16::setMode2PhaseCorrectPwm(void)
 {
 	//Phase Correct PWM.
-	*tccrxa_ &= 0x0C;					// WGMx0  = 1;
-	*tccrxa_ |=  (1 << 0);		// WGMx1  = 0;
-														// COMxB0 = 0;
-														// COMxB1 = 0;
-														// COMxA0 = 0;
-	*tccrxb_ &= 0xF7;					// COMxA1 = 0; TODO::check 0xF7
-	//*tccrxb_ |= (1 << 3);			 // WGMx2  = 1;
+	// WGMx0  = 1;
+	*tccrxa_ &= 0x0C;
+	// WGMx1  = 0;
+	*tccrxa_ |=  (1 << 0);
+	// COMxB0 = 0;
+	// COMxB1 = 0;
+	// COMxA0 = 0;
+	// COMxA1 = 0; TODO::check 0xF7
+	*tccrxb_ &= 0xF7;
+	// WGMx2  = 1;
+	//*tccrxb_ |= (1 << 3);
 
 	//Set var.
 	mode_ = t_mode::PWM_PC;
@@ -584,42 +611,24 @@ int8_t Timer16::setPrescaler(const uint16_t prescale)
 
 }
 
-/*******************************************************************************
- * Method for setting the OCRxA register.
- *
- * @param compare The compare value (unsigned byte).
- ******************************************************************************/
 void Timer16::setCompareValueA(const size_t compare)
 {
 	*ocrxah_ = (uint8_t)((static_cast<uint16_t>(compare) >> 8) & 0xFF);
 	*ocrxal_ = (uint8_t)(static_cast<uint16_t>(compare) & 0xFF);
 }
 
-/*******************************************************************************
- * Method for setting the OCRxB register.
- *
- * @param compare The compare value (unsigned byte).
- ******************************************************************************/
 void Timer16::setCompareValueB(const size_t compare)
 {
 	*ocrxbh_ = (uint8_t)((static_cast<uint16_t>(compare) >> 8) & 0xFF);
 	*ocrxbl_ = (uint8_t)(static_cast<uint16_t>(compare) & 0xFF);
 }
 
-/*******************************************************************************
- * Method for setting the OCRxB register.
- *
- * @param compare The compare value (unsigned byte).
- ******************************************************************************/
 void Timer16::setCompareValueC(const size_t compare)
 {
 	*ocrxch_ = (uint8_t)((static_cast<uint16_t>(compare) >> 8) & 0xFF);
 	*ocrxcl_ = (uint8_t)(static_cast<uint16_t>(compare) & 0xFF);
 }
 
-/*******************************************************************************
- *
- ******************************************************************************/
 int8_t Timer16::setDutyCycleA(double dutyCycle)
 {
 	int8_t ret = 0;
@@ -642,9 +651,6 @@ int8_t Timer16::setDutyCycleA(double dutyCycle)
 	return ret;
 }
 
-/*******************************************************************************
- *
- ******************************************************************************/
 int8_t Timer16::setDutyCycleB(double dutyCycle)
 {
 	int8_t ret = 0;
@@ -668,9 +674,6 @@ int8_t Timer16::setDutyCycleB(double dutyCycle)
 	return ret;
 }
 
-/*******************************************************************************
- *
- ******************************************************************************/
 int8_t Timer16::setDutyCycleC(double dutyCycle)
 {
 	int8_t ret = 0;
@@ -694,26 +697,18 @@ int8_t Timer16::setDutyCycleC(double dutyCycle)
 	return ret;
 }
 
-/*******************************************************************************
- *
- ******************************************************************************/
 void Timer16::set(const size_t value)
 {
 	*tcntxh_ = (uint8_t)((static_cast<uint16_t>(value) >> 8) & 0xFF);
 	*tcntxl_ = (uint8_t)(static_cast<uint16_t>(value) & 0xFF);
 }
 
-/*******************************************************************************
- * TODO::clear interrupt bits.
- ******************************************************************************/
 void Timer16::reset(void)
 {
 	set(0x0000);
+	overflows_ = 0x00000000;
 }
 
-/*******************************************************************************
- * TODO::clear interrupt bits.
- ******************************************************************************/
 void Timer16::hardReset(void)
 {
 	if(interrupt_!=t_interrupt::NONE)setInterruptMode(t_interrupt::NONE);
@@ -722,15 +717,12 @@ void Timer16::hardReset(void)
 	reset();
 
 	//Delete this instance from the list.
-	for(uint8_t n = 0; n < 17; ++n)
+	for(size_t n = 0; n < sizeof(__T16__); ++n)
 	{
 		if(__T16__[n]==this)delete __T16__[n];
 	}
 }
 
-/*******************************************************************************
- *
- ******************************************************************************/
 size_t Timer16::getCount(void)
 {
 	uint16_t count;
@@ -738,14 +730,6 @@ size_t Timer16::getCount(void)
 	return static_cast<size_t>(count);
 }
 
-/*******************************************************************************
- * Method for obtaining the total summized count since the last reset. Thus
- * overflows are accounted.
- *
- * REMARK: This method only works if the timer interrupts with an timer_ovf_vect()
- *
- * @return: _nonResetCount The count value since last reset.
- ******************************************************************************/
 uint32_t Timer16::getNonResetCount(void)
 {
 	uint8_t count = getCount();
@@ -760,41 +744,38 @@ uint32_t Timer16::getNonResetCount(void)
 }
 
 /** Interrupt functionality overrides *****************************************/
-/*void Timer16::enable(void)
-{
-	//TODO::
-}
+//NOTE::moved to ABC.
+//void Timer8::interruptServiceRoutine(void) { overflows_++; }
 
-void Timer16::disable(void)
-{
-	//TODO::
-}
+//void Timer16::enable(void) {}
 
-void Timer16::clear(void)
-{
-	//TODO::
-}
+//void Timer16::disable(void) {}
 
-void Timer16::interruptServiceRoutine(void)
-{
-	overflows_++;
-}*/
+//void Timer16::clear(void) {}
 
-/*******************************************************************************
- * Global forward declaration.
- ******************************************************************************/
-Timer16 * Timer16::__T16__[17] = {};
-
-/*******************************************************************************
- * _vector__x -> ISR().
+/** Interrupt preprocessor functions ******************************************/
+/**
+ * @brief The private static list of timers. Each timer interrupt vector has
+ * 				it's own instance in the static list. If the corresponding
+ *				interrupt vector is set, the instance is added to this list.
+ *
+ * We initiate the private function in de .source file which does has acces to
+ * the static private member list.
  *
  * TODO::different avrs.
+ */
+Timer16 * Timer16::__T16__[17] = {};
+
+/**
+ * @brief This preporcessor method creates an ISR mapping function for each
+ *				available timer interrupt vector. This is now done for the arduino
+ *				MEGA2560 but in the future UNO will be supported.
  *
- * Call from self.
- ******************************************************************************/
-#define TIMER_ISR(t, vect, n)																					\
-ISR(TIMER ## t ## _ ## vect ## _vect)																	\
-{																																			\
+ * TODO::different avrs.
+ */
+#define TIMER_ISR(t, vect, n)																								\
+ISR(TIMER ## t ## _ ## vect ## _vect)																				\
+{																																						\
 	if(Timer16::__T16__[n])Timer16::__T16__[n] -> interruptServiceRoutine();	\
 }
 

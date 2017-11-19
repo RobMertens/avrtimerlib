@@ -89,7 +89,6 @@ class TimerFactory
 		 */
 		static TimerFactory *startBelt(void) { return &factory_; }
 
-
 		/**
 		 * @brief A Timer factory function.
 		 *

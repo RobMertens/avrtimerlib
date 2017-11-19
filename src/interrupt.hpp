@@ -16,6 +16,9 @@
 #ifndef avr_INTERRUPT_HPP
 #define avr_INTERRUPT_HPP
 
+namespace avr
+{
+
 /**
  * @brief Interrupt interface class.
  */
@@ -56,5 +59,7 @@ class Interrupt
 		}; //End Handler class.
 
 }; //End Interrupt class.
+
+}; //End namespace avr.
 
 #endif //End avr_INTERRUPT_HPP wrapper.

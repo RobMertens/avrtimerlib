@@ -125,12 +125,21 @@ class Timer8 : public Timer
 		int8_t setAlias(const t_alias) override;
 
 		/**
-		 * @brief
+		 * @brief Method for setting the timer mode 2 NORMAL or CTC. This method
+		 *				cannot set mode 2 PWM.
+		 * @param mode The timer operation mode, only NORMAL or CTC.
+		 * @param interrupt The interrupt mode, default is NONE.
+		 * @return
 		 */
 		int8_t initialize(const t_mode, const t_interrupt) override;
 
 		/**
-		 * @brief
+		 * @brief Method for setting the timer mode 2 PWM. This method cannot set
+		 * 				mode 2 NORMAL or CTC.
+		 * @param mode The timer operation mode, only PWM.
+		 * @param interrupt The interrupt mode, default is NONE.
+		 * @param inverted Is the PWM-channel inverted?
+		 * @return
 		 */
 		int8_t initialize(const t_mode, const t_channel,
 			const t_inverted) override;
@@ -170,7 +179,8 @@ class Timer8 : public Timer
 		void hardReset(void) override;
 
 		/**
-		 * @brief
+		 * @brief Method for setting the OCRxA register.
+		 * @param compare The compare value (unsigned byte).
 		 */
 		void setCompareValueA(const size_t) override;
 
@@ -181,7 +191,8 @@ class Timer8 : public Timer
 		int8_t setDutyCycleA(double) override;
 
 		/**
-		 * @brief
+		 * @brief Method for setting the OCRxB register.
+		 * @param compare The compare value (unsigned byte).
 		 */
 		void setCompareValueB(const size_t) override;
 
@@ -202,7 +213,12 @@ class Timer8 : public Timer
 		//uint32_t getOverflows(void);
 
 		/**
-		 * @brief
+		 * @brief Method for obtaining the total summized count since the last
+		 *				reset. Thus overflows are accounted.
+		 *
+		 * NOTE: This method only works if the timer interrupts with an timer_ovf_vect()
+		 *
+		 * @return The count value since last reset.
 		 */
 		uint32_t getNonResetCount(void) override;
 
@@ -292,21 +308,25 @@ class Timer8 : public Timer
 
 		/**
 		 * @brief Sets the timer mode to normal.
+		 *				NOTE::this function sets only two bits, consider removing?
 		 */
 		void setMode2Normal(void);
 
 		/**
 		 * @brief Sets the timer mode to Clear Timer on Compare (CTC).
+		 *				NOTE::this function sets only two bits, consider removing?
 		 */
 		void setMode2Ctc(void);
 
 		/**
 		 * @brief Sets the timer mode to Fast PWM.
+		 *				NOTE::this function sets only two bits, consider removing?
 		 */
 		void setMode2FastPwm(void);
 
 		/**
 		 * @brief Sets the timer mode to Phase Correct PWM.
+		 *				NOTE::this function sets only two bits, consider removing?
 		 */
 		void setMode2PhaseCorrectPwm(void);
 

@@ -45,7 +45,7 @@ void setup()
 	 * 5. Phase Correct Phase Width Modulation 			{PWM_PC},
 	 * 6. Frequency Correct Phase Width Modulation 	{PWM_FC}
 	 */
-	t0_ptr->initialize(t_mode::, t_interrupt::COMPA);
+	t0_ptr->initialize(t_mode::CTC, t_interrupt::COMPA);
 	t0_ptr->setCompareValueA(200);
 	t0_ptr->setPrescaler(1);
 	t0_ptr->reset();
