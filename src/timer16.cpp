@@ -20,9 +20,9 @@ namespace avr
 {
 
 /** Constructors/destructor/overloading ***************************************/
-Timer16::Timer16(void) : Timer(t_alias::NONE)
+Timer16::Timer16(void) : Timer()
 {
-	//alias_ = t_alias::NONE;
+	alias_ = t_alias::NONE;
 
 	overflows_ = 0;
 }
@@ -42,7 +42,7 @@ Timer16::Timer16(const volatile uint8_t * const& tccrxa,
 	const volatile uint8_t * const& ocrxah,
 	const volatile uint8_t * const& ocrxbh,
 	const volatile uint8_t * const& ocrxal,
-	const volatile uint8_t * const& ocrxbl) : Timer(t_alias::TX)
+	const volatile uint8_t * const& ocrxbl) : Timer()
 {
 	tccrxa_ = tccrxa;						// Timer Count Control Register.
 	tccrxb_ = tccrxb;						// Timer Count Control Register.
@@ -54,7 +54,7 @@ Timer16::Timer16(const volatile uint8_t * const& tccrxa,
 	ocrxbl_ = ocrxbl;
 	ocrxbh_ = ocrxbh;
 
-	//alias_ = t_alias::TX;
+	alias_ = t_alias::TX;
 	__T16__[16] = this;						// Instance of itself for ISR.
 
 	overflows_ = 0;
@@ -356,7 +356,8 @@ int8_t Timer16::setInterruptMode(const t_interrupt interrupt)
 	*__T16__[17] = {};
 
 	//CHECK ALIAS.
-	if(alias_!=t_alias::T1 and alias_!=t_alias::T3 and alias_!=t_alias::T4 and alias_!=t_alias::T5 and alias_!=t_alias::TX)
+	if(alias_!=t_alias::T1 and alias_!=t_alias::T3 and alias_!=t_alias::T4
+		and alias_!=t_alias::T5 and alias_!=t_alias::TX)
 	{
 		ret = -1;
 		return ret;
@@ -588,10 +589,10 @@ int8_t Timer16::setPrescaler(const uint16_t prescale)
  *
  * @param compare The compare value (unsigned byte).
  ******************************************************************************/
-void Timer16::setCompareValueA(const uint16_t compare)
+void Timer16::setCompareValueA(const size_t compare)
 {
-	*ocrxah_ = (uint8_t)((compare >> 8) & 0xFF);
-	*ocrxal_ = (uint8_t)(compare & 0xFF);
+	*ocrxah_ = (uint8_t)((static_cast<uint16_t>(compare) >> 8) & 0xFF);
+	*ocrxal_ = (uint8_t)(static_cast<uint16_t>(compare) & 0xFF);
 }
 
 /*******************************************************************************
@@ -599,10 +600,10 @@ void Timer16::setCompareValueA(const uint16_t compare)
  *
  * @param compare The compare value (unsigned byte).
  ******************************************************************************/
-void Timer16::setCompareValueB(const uint16_t compare)
+void Timer16::setCompareValueB(const size_t compare)
 {
-	*ocrxbh_ = (uint8_t)((compare >> 8) & 0xFF);
-	*ocrxbl_ = (uint8_t)(compare & 0xFF);
+	*ocrxbh_ = (uint8_t)((static_cast<uint16_t>(compare) >> 8) & 0xFF);
+	*ocrxbl_ = (uint8_t)(static_cast<uint16_t>(compare) & 0xFF);
 }
 
 /*******************************************************************************
@@ -610,10 +611,10 @@ void Timer16::setCompareValueB(const uint16_t compare)
  *
  * @param compare The compare value (unsigned byte).
  ******************************************************************************/
-void Timer16::setCompareValueC(const uint16_t compare)
+void Timer16::setCompareValueC(const size_t compare)
 {
-	*ocrxch_ = (uint8_t)((compare >> 8) & 0xFF);
-	*ocrxcl_ = (uint8_t)(compare & 0xFF);
+	*ocrxch_ = (uint8_t)((static_cast<uint16_t>(compare) >> 8) & 0xFF);
+	*ocrxcl_ = (uint8_t)(static_cast<uint16_t>(compare) & 0xFF);
 }
 
 /*******************************************************************************
@@ -696,10 +697,10 @@ int8_t Timer16::setDutyCycleC(double dutyCycle)
 /*******************************************************************************
  *
  ******************************************************************************/
-void Timer16::set(const uint16_t value)
+void Timer16::set(const size_t value)
 {
-	*tcntxh_ = (uint8_t)((value >> 8) & 0xFF);
-	*tcntxl_ = (uint8_t)(value & 0xFF);
+	*tcntxh_ = (uint8_t)((static_cast<uint16_t>(value) >> 8) & 0xFF);
+	*tcntxl_ = (uint8_t)(static_cast<uint16_t>(value) & 0xFF);
 }
 
 /*******************************************************************************
@@ -730,21 +731,11 @@ void Timer16::hardReset(void)
 /*******************************************************************************
  *
  ******************************************************************************/
-uint16_t Timer16::getCount(void)
+size_t Timer16::getCount(void)
 {
 	uint16_t count;
-
 	count = (((*tcntxh_ & 0xFF) << 8) | (*tcntxl_ & 0xFF));
-
-	return count;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-uint32_t Timer16::getOverflows(void)
-{
-	return overflows_;
+	return static_cast<size_t>(count);
 }
 
 /*******************************************************************************
@@ -768,37 +759,26 @@ uint32_t Timer16::getNonResetCount(void)
 	return nonResetCount;
 }
 
-/*******************************************************************************
- * ISR for the timer class.
- ******************************************************************************/
-void Timer16::interruptServiceRoutine(void)
-{
-	overflows_++;
-}
-
-/*******************************************************************************
- * Enable timer interrupts.
- ******************************************************************************/
-void Timer16::enable(void)
+/** Interrupt functionality overrides *****************************************/
+/*void Timer16::enable(void)
 {
 	//TODO::
 }
 
-/*******************************************************************************
- * Disable timer interrupts.
- ******************************************************************************/
 void Timer16::disable(void)
 {
 	//TODO::
 }
 
-/*******************************************************************************
- * Clear timer interrupts.
- ******************************************************************************/
 void Timer16::clear(void)
 {
 	//TODO::
 }
+
+void Timer16::interruptServiceRoutine(void)
+{
+	overflows_++;
+}*/
 
 /*******************************************************************************
  * Global forward declaration.

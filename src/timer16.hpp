@@ -15,6 +15,7 @@
 
 //Include standard headers.
 #include <stdint.h>
+#include <stddef.h>
 
 //Include avr headers.
 #include <avr/interrupt.h>
@@ -207,13 +208,13 @@ class Timer16 : public Timer
 		 * @param The prescaler value.
 		 * @return
 		 */
-		int8_t setPrescaler(const uint16_t);
+		int8_t setPrescaler(const uint16_t) override;
 
 		/** Timer running functions ***********************************************/
 		/**
 		 * @brief
 		 */
-		void set(const uint16_t);
+		void set(const size_t) override;
 
 		/**
 		 * @brief
@@ -228,44 +229,44 @@ class Timer16 : public Timer
 		/**
 		 * @brief
 		 */
-		void setCompareValueA(const uint16_t);
+		void setCompareValueA(const size_t) override;
 
 		/**
 		 * @brief
 		 * @
 		 */
-		int8_t setDutyCycleA(double);
+		int8_t setDutyCycleA(double) override;
 
 		/**
 		 * @brief
 		 */
-		void setCompareValueB(const uint16_t);
+		void setCompareValueB(const size_t) override;
 
 		/**
 		 * @brief
 		 */
-		int8_t setDutyCycleB(double);
+		int8_t setDutyCycleB(double) override;
 
 		/**
 		 * @brief
 		 */
-		void setCompareValueC(const uint16_t);
+		void setCompareValueC(const size_t) override;
 
 
 		/**
 		 * @brief
 		 */
-		int8_t setDutyCycleC(double);
+		int8_t setDutyCycleC(double) override;
 
 		/**
 		 * @brief
 		 */
-		uint16_t getCount(void);
+		size_t getCount(void) override;
 
 		/**
-		 * @brief
+		 * @brief NOTE::moved to ABC.
 		 */
-		uint32_t getOverflows(void);
+		//uint32_t getOverflows(void);
 
 		/**
 		 * @brief
@@ -274,19 +275,19 @@ class Timer16 : public Timer
 
 		/** Interrupt functionality overrides *************************************/
 		/**
-		 * @brief
+		 * @brief NOTE::moved to ABC.
 		 */
-		void enable(void) override;
+		//void enable(void) override;
 
 		/**
-		 * @brief
+		 * @brief NOTE::moved to ABC.
 		 */
-		void disable(void) override;
+		//void disable(void) override;
 
 		/**
-		 * @brief
+		 * @brief NOTE::moved to ABC.
 		 */
-		void clear(void) override;
+		//void clear(void) override;
 
 	private:
 
@@ -303,20 +304,9 @@ class Timer16 : public Timer
 
 		/** Interrupt functionality overrides *************************************/
 		/**
-		 * @brief
+		 * @brief NOTE::moved to ABC.
 		 */
-		void interruptServiceRoutine(void) override;
-
-		/** Variables *************************************************************/
-		/**
-		 * @brief
-		 */
-		uint16_t prescale_;
-
-		/**
-		 * @brief TODO::move to abstract base class.
-		 */
-		uint32_t overflows_;
+		//void interruptServiceRoutine(void) override;
 
 		/** Registers *************************************************************/
 		/**

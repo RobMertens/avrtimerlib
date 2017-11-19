@@ -12,9 +12,11 @@
 
 //Include standard headers.
 #include <stdint.h>
+#include <stddef.h>
 
 //Include library headers.
 #include "interrupt.hpp"
+
 /**
  * @brief The project namespace.
  */
@@ -156,28 +158,12 @@ class Timer : public Interrupt::Handler
 		 *				class.
 		 * @param The timer alias.
 		 */
-		explicit Timer(const t_alias alias) : alias_(alias) {}
+		//explicit Timer(const t_alias alias) : alias_(alias) {}
 
 		/**
 		 * @brief Destructor for the arbitrary timer, an Abstract Base Class (ABC).
 		 */
-		virtual ~Timer(void) {}
-
-		/** Timer runtime function overrides ****************************************/
-		/**
-		 * @brief
-		 */
-		//virtual void set(const uint8_t) = 0;
-
-		/**
-		 * @brief
-		 */
-		virtual void reset(void) = 0;
-
-		/**
-		 * @brief
-		 */
-		virtual void hardReset(void) = 0;
+		virtual ~Timer(void) {};
 
 		/** Timer setting functions ***********************************************/
 		/**
@@ -195,6 +181,24 @@ class Timer : public Interrupt::Handler
 		 */
 		virtual int8_t initialize(const t_mode, const t_channel,
 			const t_inverted) = 0;
+
+		/**
+		 * @brief Method for setting the timer prescaler value.
+		 *
+		 *    value | timer 0 | timer 1 | timer 2 | timer 3 | timer 4 |  timer 5
+		 *     	  1 |    x    |    x    |    x    |    x    |    x    |    x
+		 * 	  		8 |    x    |    x    |    x    |    x    |    x    |    x
+		 *       32 |	      	|    x    |         |         |         |
+		 *       64 |    x    |    x    |    x    |    x    |    x    |    x
+		 *      256 |    x    |         |    x    |    x    |    x    |    x
+		 *     1024 |    x    |         |    x    |    x    |    x    |    x
+		 *
+		 * TODO::don't allow prescaler with wrong timer.
+		 *
+		 * @param The prescaler value.
+		 * @return
+		 */
+		virtual int8_t setPrescaler(const uint16_t) = 0;
 
 		/**
 		 * @brief Method for obtaining the actual timer alias.
@@ -226,6 +230,119 @@ class Timer : public Interrupt::Handler
 		 */
 		t_inverted getInverted(void) { return inverted_; }
 
+		/** Timer runtime function overrides **************************************/
+		/**
+		 * @brief Functions for setting the timer to a specific value.
+		 *
+		 * TODO::two disctict functions, this is ugly code...
+		 */
+		virtual void set(const size_t) = 0;
+		//virtual void set(const uint16_t) = 0;
+
+		/**
+		 * @brief
+		 */
+		virtual void reset(void) = 0;
+
+		/**
+		 * @brief
+		 */
+		virtual void hardReset(void) = 0;
+
+		/**
+		 * @brief
+		 *
+		 * HACK::two disctict functions, this is ugly code...
+		 */
+		virtual void setCompareValueA(const size_t) = 0;
+		//virtual void setCompareValueA(const uint16_t) = 0;
+
+		/**
+		 * @brief
+		 * @param[out]
+		 */
+		virtual int8_t setDutyCycleA(double) = 0;
+
+		/**
+		 * @brief
+		 *
+		 * HACK::two disctict functions, this is ugly code...
+		 */
+		virtual void setCompareValueB(const size_t) = 0;
+		//virtual void setCompareValueB(const uint16_t) = 0;
+
+		/**
+		 * @brief
+		 * @param[out]
+		 */
+		virtual int8_t setDutyCycleB(double) = 0;
+
+		/**
+		 * @brief
+		 *
+		 * HACK::this method is only used in one derived class...
+		 */
+		virtual void setCompareValueC(const size_t) = 0;
+
+		/**
+		 * @brief
+		 *
+		 * HACK::this method is only used in one derived class...
+		 */
+		virtual int8_t setDutyCycleC(double) = 0;
+
+		/**
+		 * @brief
+		 *
+		 * HACK::two disctict functions, this is ugly code...
+		 */
+		virtual size_t getCount(void) = 0;
+		//virtual uint16_t getCount(void) = 0;
+
+		/**
+		 * @brief
+		 */
+		uint32_t getOverflows(void) {	return overflows_; }
+
+		/**
+		 * @brief
+		 */
+		virtual uint32_t getNonResetCount(void) = 0;
+
+		/** Interrupt functionality overrides *************************************/
+		/**
+		 * @brief The interrupt service routine which ups the overflow counter.
+		 *
+		 * IDEA::specific funtions for different timer modes could be added here.
+		 * No idea what these could be anyway...
+		 */
+		void interruptServiceRoutine(void) override { overflows_++; }
+
+		/**
+		 * @brief TODO::what todo with timsk??
+		 */
+		void enable(void) override
+		{
+			sei();
+		}
+
+		/**
+		 * @brief TODO::what todo with timsk??
+		 */
+		void disable(void) override
+		{
+			cli();
+		}
+
+		/**
+		 * @brief NOTE::not sure how to safely implement this since the timer
+		 *				settings will be lost.
+		 */
+		void clear(void) override
+		{
+			//timskx_
+		}
+
 	protected:
 
 		/** Variables ***************************************************************/
@@ -253,6 +370,16 @@ class Timer : public Interrupt::Handler
 		 * @brief
 		 */
 		t_inverted inverted_;
+
+		/**
+		 * @brief
+		 */
+		uint16_t prescale_;
+
+		/**
+		 * @brief
+		 */
+		uint32_t overflows_;
 
 	private:
 

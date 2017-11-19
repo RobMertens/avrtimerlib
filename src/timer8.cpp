@@ -25,9 +25,9 @@ namespace avr
  * @param: tccr The timer control register.
  * @param: tcnt The timer count register.
  ******************************************************************************/
-Timer8::Timer8(void) : Timer(t_alias::NONE)
+Timer8::Timer8(void) : Timer()
 {
-	//alias_ = t_alias::NONE;
+	alias_ = t_alias::NONE;
 
 	overflows_ = 0;
 }
@@ -58,7 +58,7 @@ Timer8::Timer8(const t_alias alias) : Timer()
 Timer8::Timer8(volatile uint8_t const * const& tccrxa,
 	volatile uint8_t const * const& tccrxb, volatile uint8_t const * const& tcntx,
 	volatile uint8_t const * const& timskx, volatile uint8_t const * const& ocrxa,
-	volatile uint8_t const * const& ocrxb) : Timer(t_alias::TX)
+	volatile uint8_t const * const& ocrxb) : Timer()
 {
 	tccrxa_ = tccrxa;						// Timer Count Control Register.
 	tccrxb_ = tccrxb;						// Timer Count Control Register.
@@ -67,7 +67,7 @@ Timer8::Timer8(volatile uint8_t const * const& tccrxa,
 	ocrxa_  = ocrxa;
 	ocrxb_  = ocrxb;
 
-	//alias_ = t_alias::TX;
+	alias_ = t_alias::TX;
 
 	overflows_ = 0;
 
@@ -570,9 +570,9 @@ int8_t Timer8::setPrescaler(const uint16_t prescale)
  *
  * @param compare The compare value (unsigned byte).
  ******************************************************************************/
-void Timer8::setCompareValueA(const uint8_t compare)
+void Timer8::setCompareValueA(const size_t compare)
 {
-	*ocrxa_ = compare;
+	*ocrxa_ = static_cast<uint8_t>(compare);
 }
 
 /*******************************************************************************
@@ -580,9 +580,9 @@ void Timer8::setCompareValueA(const uint8_t compare)
  *
  * @param compare The compare value (unsigned byte).
  ******************************************************************************/
-void Timer8::setCompareValueB(const uint8_t compare)
+void Timer8::setCompareValueB(const size_t compare)
 {
-	*ocrxb_ = compare;
+	*ocrxb_ = static_cast<uint8_t>(compare);
 }
 
 /*******************************************************************************
@@ -638,9 +638,9 @@ int8_t Timer8::setDutyCycleB(double dutyCycle)
 /*******************************************************************************
  *
  ******************************************************************************/
-void Timer8::set(const uint8_t value)
+void Timer8::set(const size_t value)
 {
-	*tcntx_ = value;
+	*tcntx_ = static_cast<uint8_t>(value);
 }
 
 /*******************************************************************************
@@ -672,9 +672,9 @@ void Timer8::hardReset(void)
 /*******************************************************************************
  *
  ******************************************************************************/
-uint8_t Timer8::getCount(void)
+size_t Timer8::getCount(void)
 {
-	return *tcntx_;
+	return static_cast<size_t>(*tcntx_);
 }
 
 /*******************************************************************************
@@ -698,45 +698,26 @@ uint32_t Timer8::getNonResetCount(void)
 	return nonResetCount;
 }
 
-/*******************************************************************************
- *
- ******************************************************************************/
-uint32_t Timer8::getOverflows(void)
-{
-	return overflows_;
-}
-
-/*******************************************************************************
- * ISR for the timer class.
- ******************************************************************************/
-void Timer8::interruptServiceRoutine(void)
+/** Interrupt functionality overrides *****************************************/
+/*void Timer8::interruptServiceRoutine(void)
 {
 	overflows_++;
 }
 
-/*******************************************************************************
- * Enable timer interrupts.
- ******************************************************************************/
-void Timer8::enable(void)
-{
-	//TIMSK = ;
-}
-
-/*******************************************************************************
- * Disable timer interrupts.
- ******************************************************************************/
-void Timer8::disable(void)
+void Timer16::enable(void)
 {
 	//TODO::
 }
 
-/*******************************************************************************
- * Clear timer interrupts.
- ******************************************************************************/
-void Timer8::clear(void)
+void Timer16::disable(void)
 {
 	//TODO::
 }
+
+void Timer16::clear(void)
+{
+	//TODO::
+}*/
 
 /*******************************************************************************
  * Global forward declaration.

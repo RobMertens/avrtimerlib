@@ -13,6 +13,7 @@
 
 //Include standard headers.
 #include <stdint.h>
+#include <stddef.h>
 
 //Include avr headers.
 #include <avr/interrupt.h>
@@ -135,15 +136,28 @@ class Timer8 : public Timer
 			const t_inverted) override;
 
 		/**
-		 * @brief
+		 * @brief Method for setting the timer prescaler value.
+		 *
+		 *    VALUE | TIMER 0 | TIMER 2
+		 *     	  1 |    x    |   x
+		 * 	  		8 |    x    |   x
+		 *       32 |	      	|   x
+		 *       64 |    x    |   x
+		 *      256 |    x    |
+		 *     1024 |    x    |
+		 *
+		 * TODO::don't allow prescaler with wrong timer.
+		 *
+		 * @param The prescaler value.
+		 * @return
 		 */
-		int8_t setPrescaler(const uint16_t);
+		int8_t setPrescaler(const uint16_t) override;
 
 		/** Timer runtime functions ***********************************************/
 		/**
 		 * @brief
 		 */
-		void set(const uint8_t);
+		void set(const size_t) override;
 
 		/**
 		 * @brief
@@ -158,55 +172,55 @@ class Timer8 : public Timer
 		/**
 		 * @brief
 		 */
-		void setCompareValueA(const uint8_t);
+		void setCompareValueA(const size_t) override;
 
 		/**
 		 * @brief
 		 * @param[out]
 		 */
-		int8_t setDutyCycleA(double);
+		int8_t setDutyCycleA(double) override;
 
 		/**
 		 * @brief
 		 */
-		void setCompareValueB(const uint8_t);
+		void setCompareValueB(const size_t) override;
 
 		/**
 		 * @brief
 		 * @param[out]
 		 */
-		int8_t setDutyCycleB(double);
+		int8_t setDutyCycleB(double) override;
 
 		/**
 		 * @brief
 		 */
-		uint8_t getCount(void);
+		size_t getCount(void) override;
+
+		/**
+		 * @brief NOTE::moved to ABC.
+		 */
+		//uint32_t getOverflows(void);
 
 		/**
 		 * @brief
 		 */
-		uint32_t getOverflows(void);
-
-		/**
-		 * @brief
-		 */
-		uint32_t getNonResetCount(void);
+		uint32_t getNonResetCount(void) override;
 
 		/** Interrupt functionality overrides *************************************/
 		/**
-		 * @brief
+		 * @brief NOTE::moved to ABC.
 		 */
-		void enable(void) override;
+		//void enable(void) override;
 
 		/**
-		 * @brief
+		 * @brief NOTE::moved to ABC.
 		 */
-		void disable(void) override;
+		//void disable(void) override;
 
 		/**
-		 * @brief
+		 * @brief NOTE::moved to ABC.
 		 */
-		void clear(void) override;
+		//void clear(void) override;
 
 	private:
 
@@ -223,20 +237,9 @@ class Timer8 : public Timer
 
 		/** Interrupt functionality overrides *************************************/
 		/**
-		 * @brief
+		 * @brief NOTE::moved to ABC.
 		 */
-		void interruptServiceRoutine(void) override;
-
-		/** Variables *************************************************************/
-		/**
-		 * @brief
-		 */
-		uint16_t prescale_;
-
-		/**
-		 * @brief
-		 */
-		uint32_t overflows_;
+		//void interruptServiceRoutine(void) override;
 
 		/** Registers *************************************************************/
 		/**
@@ -322,6 +325,21 @@ class Timer8 : public Timer
 		 * @return Is the operation successful ? [0] YES : [-1] NO.
 		 */
 		int8_t setPwmChannel(const t_channel, const t_inverted) override;
+
+		/** Timer runtime functions ***********************************************/
+		/**
+		 * @brief This is set to private since this timer has no channel C.
+		 *
+		 * HACK::this method is only used in one derived class...
+		 */
+		void setCompareValueC(const size_t) override {}
+
+		/**
+		 * @brief This is set to private since this timer has no channel C.
+		 *
+		 * HACK::this method is only used in one derived class...
+		 */
+		int8_t setDutyCycleC(double) override { return 0; }
 
 		/** Interrupt functions ***************************************************/
 		/**
