@@ -1,6 +1,6 @@
 ## avr-timer-lib
 
-Timer library for Arduino Mega (atmega2560). The available timers on the atmega2560 are shown in the following table. The extern timer is not really a atmega2560 timer. Other AVR-timers and other arduino boards could be initiated with this timer. However, this is still in testing phase.
+Timer library for Arduino Mega (atmega2560). The available timers on the atmega2560 are shown in the following table. The extern timer is not really a atmega2560 timer.
 
 | Timer     		| Code specifier 		| Bitness	|
 | ------------- | ----------------- | ------- |
@@ -60,13 +60,9 @@ timer[4] = TimerFactory::startBelt()->produce(t_alias::T4);
 timer[5] = TimerFactory::startBelt()->produce(t_alias::T5);
 ```
 
-### Ticks and time
+### Some theory
 
-Ok, now the math part appears. The concepts of tick and time are a must to initiate them properly. The Arduino MEGA runs on a clock frequency of 16 MHz which equals 16.000.000 Hz. The time it takes for one tick is equal to 0.0625e-8[!] us which is very very fast. An 8-bit timer uses one byte of information. The number of ticks to reach the maximum value is equal to 255 (2^8 - 1). This means that the timer reaches its TOP count value in 15.94 us.
-
-//TODO::formula here
-
-Every clock-tick the timer ups the count value. This means that the time corresponding to each tick equals:
+Ok, now the boring theory part appears. However, some proper understanding of how such a timer works is necessary to do some usefull stuff with it. The concepts of *ticks* and *time* are a must to initiate them properly. The Arduino MEGA runs on a clock frequency of 16 MHz which equals 16.000.000 Hz. The time it takes for one tick is equal to 0.0625e-8[!] us which is very very fast. An 8-bit timer uses one byte of information. The number of ticks to reach the maximum value is equal to 255 (2^8 - 1). This means that the timer reaches its TOP count value in 15.94 us. For an 16-bit timer the number of ticks is equal to 65355 (2^16 - 1). Speaking in terms of time, this will take approximately 4084.69 us.
 
 //TODO::formula here
 
@@ -76,7 +72,7 @@ The time per timer tick depends on the oscillator on the Arduino and the prescal
 
 To calculate the total count time, we multiply it by the number of ticks depending on bitness and specified TOP.
 
-
+### Timer interrupts
 
 AVR timers have two distict operation modes. Firstly the **interrupt** mode. In this mode the timer count to a specific value, either TOP or a manually set value. When the timer reaches this value an interrupt is fired. These timer modes are shown in the table below.
 
@@ -115,14 +111,16 @@ timer[3]->initialize(t_mode::CTC, t_interrupt::OVF);
 timer[3]->setCompareValueA(0x4E20);
 ```
 
-The second distinct operation modes are **Phase Width Modulation** (PWM). In these modes interrupts and corresponding vectors do not work. This library provides easy-to-use funtions to specify a timer as PWM-signal. The supported modes are listed below. The Fast PWM is considered as the most standard form of PWM with the recognizable saw-tooth curve. For the other modes I refer to the AVR-manual. An 8-bit timer has two channels A and B, and an 16-bit timer has three channels A,B and C. This means you can obtain either two or three PWM-signals from one timer!
+### Pulse Width Modulation
 
-| Phase Width Modulation (PWM) modes  						| Code specifier 		| Bitness	|
+The second distinct operation modes are **Pulse Width Modulation** (PWM). In these modes interrupts and corresponding vectors do not work. This library provides easy-to-use funtions to specify a timer as PWM-signal. The supported modes are listed below. The Fast PWM is considered as the most standard form of PWM with the recognizable saw-tooth curve. For the other modes I refer to the AVR-manual. An 8-bit timer has two channels A and B, and an 16-bit timer has three channels A,B and C. This means you can obtain either two or three PWM-signals from one timer!
+
+| Pulse Width Modulation (PWM) modes  						| Code specifier 		| Bitness	|
 | ----------------------------------------------- | ----------------- | ------- |
 | None      																			| `t_mode::NONE`		| 8/16		|
-| Phase Width Modulation (PWM) Fast  							| `t_mode::PWM_F` 	| 8/16		|
-| Phase Width Modulation (PWM) Phase Correct 			| `t_mode::PWM_PC` 	| 8/16		|
-| Phase Width Modulation (PWM) Frequency Correct 	| `t_mode::PWM_FC` 	| 16			|
+| Pulse Width Modulation (PWM) Fast  							| `t_mode::PWM_F` 	| 8/16		|
+| Pulse Width Modulation (PWM) Pulse Correct 			| `t_mode::PWM_PC` 	| 8/16		|
+| Pulse Width Modulation (PWM) Frequency Correct 	| `t_mode::PWM_FC` 	| 16			|
 
 ```c++
 // Since timer4 is an 16-bit timer the maximum count value is 65535 (2^16 - 1).
@@ -136,7 +134,7 @@ timer[4]->setDutyCycleA(0.75);
 timer[4]->initialize(t_mode::PWM_F, t_channel::A, t_inverted::INV);
 ```
 
-The period chosen in the latter example is a bit tedious. So let's set a timer with desired period. Let's say we want a PWM-signal with a period of 4 ms. The number of the timer TOP value can be found by the formulas above. For our example this means to set the top value to 63999 ticks with a prescaler of 1. This fits within the 16-bit timer maximum count value (65355). Which prescaler and TOP value must be set for an 8-bit timer? Try it yourself!
+The period from the latter example is a bit tedious to use. So let's create a timer with a desired period. Let's say we want a PWM-signal with a period of 4 ms. The number of the timer TOP value can be found by the formulas above. For our example this means to set the top value to 63999 ticks with a prescaler of 1. This fits within the 16-bit timer maximum count value (65355). Which prescaler and TOP value must be set for an 8-bit timer? Try it yourself!
 
 To set the 16-bit timer to a PWM-signal with period of 4 ms we look at the next code block example. The TOP specifier after the channel declaration sets the timer with desired TOP value. Note that you lose one PWM-channel since the TOP value is set in the OCRA register.
 
@@ -153,4 +151,5 @@ timer[4]->setDutyCycleC(0.67);
 ## Future extensions
 
 * Arduino UNO support.
+* Extern timer support `t_alias::TX` and additional functions for this timer.
 * The current interrupt service routine ups the overflow counter. However, a lot more ISR's could be usefull. In the future I'll provide some method to override the class member ISR() function.
