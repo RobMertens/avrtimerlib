@@ -27,19 +27,15 @@ Timer8 t0(t_alias::T0);
 // And set an interrupt when TOP is reached.
 t0.initialize(t_mode::NORMAL, t_interrupt::OVF0);
 
-// The timer prescaler value determines the actual time it takes to up de timer
-// count value. For a prescaler of 1 this means that we use one clock pulse.
-// t = 1/f_clock = 1/16MHz = 0.0625 $\mu$s.
-// The time for a new interrupt to occur will be at:
-// t_int = 0.0625*(2^8 - 1) = 15.938 $\mu$s.
+// The timer prescaler value determines the actual time it takes to up the timer
+// count value. More on prescalers is explained in detail below.
 t0.setPrescaler(1);
 
-// Reset the count value and start counting.
+// Reset the timer and start counting.
 t0.reset();
 ```
 
-Pointer to Timer instances are supported as shown in the following example. The
-factory pattern in added to obtain the correct pointers.
+Pointer to Timer instances are supported as shown in the following example. A factory pattern is added to create timers without even specifying the timer bitness.
 
 ```c++
 // Create a base class timer pointer to the 8-bit timer from the code block above.
@@ -62,15 +58,21 @@ timer[5] = TimerFactory::startBelt()->produce(t_alias::T5);
 
 ### Some theory
 
-Ok, now the boring theory part appears. However, some proper understanding of how such a timer works is necessary to do some usefull stuff with it. The concepts of *ticks* and *time* are a must to initiate them properly. The Arduino MEGA runs on a clock frequency of 16 MHz which equals 16.000.000 Hz. The time it takes for one tick is equal to 0.0625e-8[!] us which is very very fast. An 8-bit timer uses one byte of information. The number of ticks to reach the maximum value is equal to 255 (2^8 - 1). This means that the timer reaches its TOP count value in 15.94 us. For an 16-bit timer the number of ticks is equal to 65355 (2^16 - 1). Speaking in terms of time, this will take approximately 4084.69 us.
+Ok, some timer theory first. To do some useful stuff with AVR-timers we have to understand how these things work under the hood of our Arduino. Let's start with basics of the basics, namely the concepts of *ticks* and *time*. The Arduino MEGA runs on a clock frequency of 16 MHz or 16.000.000 Hz. Each clock cycle the timer ups the count value, this is referred to as a tick. The time for this tick depends on the clock frequency and is equal to 0.0625e-8[!] us which is *very very* fast. An 8-bit timer uses one byte of information. The number of ticks to reach the maximum count value equals  255 (2^8 - 1). This means that the timer reaches its TOP count value in 15.94 us. For an 16-bit timer the number of ticks is equal to 65355 (2^16 - 1). Speaking in terms of time, this will take approximately 4084.69 us. Obviously we don't want our timer to count to either 15.94 us or 4084.69 us all the time. Luckely for us, we can play a little bit with these values. The engineers of AVR provided a parameter called the *prescaler* to modify the time for each tick. The formula to calculate the timer for each tick is given as follows:
 
-//TODO::formula here
+//TODO::formula .gif
 
-The time per timer tick depends on the oscillator on the Arduino and the prescale value. The timer tick value [\ms] is calculated as follows.
+The possibilities for the prescaler values is different for each timer. Next table gives an overview for all the available timers on the Atmega2560.
 
+| Prescaler | Timer 0 | Timer 1 | Timer 2 | Timer 3 | Timer 4 | Timer 5 |
+| --------- | -------:| -------:| -------:| -------:| -------:| -------:|
+| 1    			| X				| X				| X				| X				| X				| X				|
+| 8    			| X				| X				| X				| X				| X				| X				|
+| 32				| 				| 				| X				| 				| 				| 				|
+| 64				| X				| X				| X				| X				| X				| X				|
+| 256				| X				| X				| 				| X				| X				| X				|
+| 1024			| X				| X				| 				| X				| X				| X				|
 
-
-To calculate the total count time, we multiply it by the number of ticks depending on bitness and specified TOP.
 
 ### Timer interrupts
 
@@ -111,6 +113,8 @@ timer[3]->initialize(t_mode::CTC, t_interrupt::OVF);
 timer[3]->setCompareValueA(0x4E20);
 ```
 
+Supported interrupt vectors are `OVF`, `COMPA`, `COMPB` for 8-bit timers and additionally , `COMPC` for 16-bit timers.
+
 ### Pulse Width Modulation
 
 The second distinct operation modes are **Pulse Width Modulation** (PWM). In these modes interrupts and corresponding vectors do not work. This library provides easy-to-use funtions to specify a timer as PWM-signal. The supported modes are listed below. The Fast PWM is considered as the most standard form of PWM with the recognizable saw-tooth curve. For the other modes I refer to the AVR-manual. An 8-bit timer has two channels A and B, and an 16-bit timer has three channels A,B and C. This means you can obtain either two or three PWM-signals from one timer!
@@ -139,17 +143,20 @@ The period from the latter example is a bit tedious to use. So let's create a ti
 To set the 16-bit timer to a PWM-signal with period of 4 ms we look at the next code block example. The TOP specifier after the channel declaration sets the timer with desired TOP value. Note that you lose one PWM-channel since the TOP value is set in the OCRA register.
 
 ```c++
-// Set timer4 to a PWM-signal with a period of 4000 us.
+// Set timer5 to a PWM-signal with a period of 4000 us.
 // The PWM-outputs are specified at channel B and C.
-timer[4]->initialize(t_mode::PWM_F, t_channel::BC_TOP, t_inverted::NORMAL);
-timer[4]->setPrescaler(1);
-timer[4]->setCompareValueA(63999);
-timer[4]->setDutyCycleB(0.75);
-timer[4]->setDutyCycleC(0.67);
+timer[5]->initialize(t_mode::PWM_F, t_channel::BC_TOP, t_inverted::NORMAL);
+timer[5]->setPrescaler(1);
+timer[5]->setCompareValueA(63999);
+timer[5]->setDutyCycleB(0.75);
+timer[5]->setDutyCycleC(0.67);
 ```
+
+Supported PWM-channels are `A`, `B`, `B_TOP` and `AB` for 8-bit timers and additionally , `C`, `C_TOP`, `BC_TOP`, `AC`, `BC` and `ABC` for 16-bit timers.
 
 ## Future extensions
 
 * Arduino UNO support.
 * Extern timer support `t_alias::TX` and additional functions for this timer.
 * The current interrupt service routine ups the overflow counter. However, a lot more ISR's could be usefull. In the future I'll provide some method to override the class member ISR() function.
+* The CAPTURE interrupt vectors are not supported.
