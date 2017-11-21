@@ -12,6 +12,8 @@ Timer library for Arduino Mega (atmega2560). The available timers on the atmega2
 | Timer 5				| `t_alias::T5` 		| 16			|
 | Timer extern	| `t_alias::TX` 		| 8/16		|
 
+### Easy to use
+
 A hardware timer (8/16-bit) can be set in a few lines of code as shown in the
 example below:
 
@@ -36,14 +38,6 @@ t0.setPrescaler(1);
 t0.reset();
 ```
 
-The time per timer tick depends on the oscillator on the Arduino and the prescale value. The timer tick value [\ms] is calculated as follows.
-
-\[t_{tick} = \frac{prescaler}{f_{clk}} \]
-
-To calculate the total count time, we multiply it by the number of ticks depending on bitness and specified TOP.
-
-\[t_{timer} = t_{tick}\dot{TOP} \]
-
 Pointer to Timer instances are supported as shown in the following example. The
 factory pattern in added to obtain the correct pointers.
 
@@ -65,6 +59,24 @@ timer[3] = TimerFactory::startBelt()->produce(t_alias::T3);
 timer[4] = TimerFactory::startBelt()->produce(t_alias::T4);
 timer[5] = TimerFactory::startBelt()->produce(t_alias::T5);
 ```
+
+### Ticks and time
+
+Ok, now the math part appears. The concepts of tick and time are a must to initiate them properly. The Arduino MEGA runs on a clock frequency of 16 MHz which equals 16.000.000 Hz. The time it takes for one tick is equal to 0.0625e-8[!] us which is very very fast. An 8-bit timer uses one byte of information. The number of ticks to reach the maximum value is equal to 255 (2^8 - 1). This means that the timer reaches its TOP count value in 15.94 us.
+
+//TODO::formula here
+
+Every clock-tick the timer ups the count value. This means that the time corresponding to each tick equals:
+
+//TODO::formula here
+
+The time per timer tick depends on the oscillator on the Arduino and the prescale value. The timer tick value [\ms] is calculated as follows.
+
+
+
+To calculate the total count time, we multiply it by the number of ticks depending on bitness and specified TOP.
+
+
 
 AVR timers have two distict operation modes. Firstly the **interrupt** mode. In this mode the timer count to a specific value, either TOP or a manually set value. When the timer reaches this value an interrupt is fired. These timer modes are shown in the table below.
 
@@ -121,14 +133,12 @@ timer[4]->setPrescaler(1);
 timer[4]->setDutyCycleA(0.75);
 
 // To invert the channel we set the INV specifier which gives us 3071.95 us OFF-time.
-timer[4]->initialize(t_mode::PWM_F, t_channel::A, t_inverted::NORMAL);
+timer[4]->initialize(t_mode::PWM_F, t_channel::A, t_inverted::INV);
 ```
 
-The period chosen in the latter example is a bit tedious. So let's set a timer with desired period. Let's say we want a PWM-signal with a period of 4 ms. The number of the timer top value can be found by the next formula.
+The period chosen in the latter example is a bit tedious. So let's set a timer with desired period. Let's say we want a PWM-signal with a period of 4 ms. The number of the timer TOP value can be found by the formulas above. For our example this means to set the top value to 63999 ticks with a prescaler of 1. This fits within the 16-bit timer maximum count value (65355). Which prescaler and TOP value must be set for an 8-bit timer? Try it yourself!
 
-\[n_{ticks} = frac{ t_{timer}\dot{f_{CLK}} }{ prescaler } \]
-
-For our example this means to set the top value to 63999 ticks with a prescaler of 1. This fits within the 16-bit timer maximum count value (65355). To achieve this with a 8-bit timer, the prescaler must be 256 and 4 ms 250 ticks. So only timer 0 can be used in this example because the limited prescalers for timer 2. To set a 16-bit timer to this mode we see the next example. The TOP specifier after the channel declaration sets the timer with desired TOP value. However, you lose one PWM-channel since the value is set in the OCRA register.
+To set the 16-bit timer to a PWM-signal with period of 4 ms we look at the next code block example. The TOP specifier after the channel declaration sets the timer with desired TOP value. Note that you lose one PWM-channel since the TOP value is set in the OCRA register.
 
 ```c++
 // Set timer4 to a PWM-signal with a period of 4000 us.
@@ -142,5 +152,5 @@ timer[4]->setDutyCycleC(0.67);
 
 ## Future extensions
 
-Arduino UNO support.
-interruptServiceRoutine override possibility outside class definition, e.g. your own interrupt sequence.
+* Arduino UNO support.
+* The current interrupt service routine ups the overflow counter. However, a lot more ISR's could be usefull. In the future I'll provide some method to override the class member ISR() function.
