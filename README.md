@@ -66,8 +66,8 @@ The possibilities for the prescaler values is different for each timer. Next tab
 
 | Prescaler | Timer 0 | Timer 1 | Timer 2 | Timer 3 | Timer 4 | Timer 5 |
 | --------- | -------:| -------:| -------:| -------:| -------:| -------:|
-| 1    			| X				| X				| X				| X				| X				| X				|
-| 8    			| X				| X				| X				| X				| X				| X				|
+| 1    			| X			 :| X				| X				| X				| X				| X				|
+| 8    			| X			 :| X				| X				| X				| X				| X				|
 | 32				| 				| 				| X				| 				| 				| 				|
 | 64				| X				| X				| X				| X				| X				| X				|
 | 256				| X				| X				| 				| X				| X				| X				|
@@ -104,11 +104,10 @@ timer[3]->setCompareValueA(0x4E20);
 // NOTE::the InterruptServiceRoutine() ups the timer overflow counter.
 // The nonResetCount() funtion does not work here.
 timer[3]->initialize(t_mode::CTC, t_interrupt::NONE);
-timer[3]->setCompareValueA(0x4E20);
 
-// The following example shows how to NOT set a timer.
+// The following example shows how to _NOT_ set a timer.
 // We set the timer to clear on compare with 20000 and set an interrupt on TOP.
-// This means that the timer won't reach it's
+// This means that the interrupt is never fired.
 timer[3]->initialize(t_mode::CTC, t_interrupt::OVF);
 timer[3]->setCompareValueA(0x4E20);
 ```

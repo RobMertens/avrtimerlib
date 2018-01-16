@@ -14,6 +14,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
+//Include avr headers.
+#include <avr/interrupt.h>
+
 //Include library headers.
 #include "interrupt.hpp"
 

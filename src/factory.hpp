@@ -38,7 +38,7 @@ namespace avr
 	 * @param[out]
 	 * @return
 	 */
-	Timer::Ptr create(const t_alias alias) //__attribute__((deprecated))
+	/*Timer::Ptr create(const t_alias alias) //__attribute__((deprecated))
 	{
 		switch(alias)
 		{
@@ -66,7 +66,7 @@ namespace avr
 				//TODO::return NULL pointer.
 				break;
 		}
-	};
+	};*/
 
 /**
  * @brief TimerFactory Class. This class is the replacement for the factory
